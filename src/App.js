@@ -1,0 +1,447 @@
+// src/App.js
+import React, { useState, useEffect, useCallback } from "react";
+import { jsPDF } from "jspdf";
+import { logoutUser } from "./config/firebase";
+import { useAuth } from "./hooks/useAuth";
+import { useFirestore } from "./hooks/useFirestore";
+import { loadSharedVehicles, removeSharedVehicle } from "./config/firestore";
+import { db } from "./config/firebase";
+import { getDoc, doc } from "firebase/firestore";
+import { CHECKLIST_MAP, getChecklist } from "./config/data";
+import { getProgress } from "./utils/helpers";
+import { translations } from "./config/translations";
+import {
+  AccueilScreen,
+  ChecklistScreen,
+  DocumentsScreen,
+  DepensesScreen,
+  HistoriqueScreen,
+  RapportScreen,
+  SecoursScreen,
+} from "./screens/index";
+import LoginScreen from "./components/LoginScreen";
+import ShareScreen from "./components/ShareScreen";
+import CGUScreen from "./components/CGUScreen";
+import PremiumScreen from "./components/PremiumScreen";
+import "./App.css";
+
+const TABS = [
+  { id: "accueil",    label: "Accueil",    icon: "🏠" },
+  { id: "checklist",  label: "Checklist",  icon: "✅" },
+  { id: "documents",  label: "Documents",  icon: "📄" },
+  { id: "depenses",   label: "Dépenses",   icon: "💰" },
+  { id: "historique", label: "Historique", icon: "🕐" },
+  { id: "rapport",    label: "Rapport",    icon: "📊" },
+];
+
+const C = {
+  bg:      "#000000",
+  surface: "#3A3A40",
+  border:  "rgba(255,255,255,0.07)",
+  blue:    "#2157FF",
+  text:    "#ffffff",
+  muted:   "#64748b",
+  red:     "#ef4444",
+};
+
+export default function App() {
+  const { user, loading: authLoading } = useAuth();
+  const userId = user?.uid ?? null;
+  const { load, save, syncStatus } = useFirestore(userId);
+
+  const [vehicles,      setVehicles]      = useState([]);
+  const [sharedVehicles, setSharedVehicles] = useState([]);
+  const [active,        setActive]        = useState(null);
+  const contentRef = React.useRef(null);
+
+  const setTab = useCallback((newTab) => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    setTabState(newTab);
+  }, []);
+
+  const [tab, setTabState] = useState("accueil");
+  const [lang, setLang] = useState(() => {
+    const saved = localStorage.getItem("lang");
+    if (saved) return saved;
+    const browserLang = navigator.language || navigator.userLanguage || "fr";
+    return browserLang.startsWith("fr") ? "fr" : "en";
+  });
+  const [langLoaded, setLangLoaded] = useState(false);
+  const [name,          setName]          = useState("");
+  const [immat,         setImmat]         = useState("");
+  const [type,          setType]          = useState("voiture");
+  const [docTab,        setDocTab]        = useState("assurance");
+  const [docs,          setDocs]          = useState([]);
+  const [depenses,      setDepenses]      = useState([]);
+  const [showShare,     setShowShare]     = useState(false);
+  const [localInvoices, setLocalInvoices] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("invoices") || "[]"); } catch { return []; }
+  });
+
+  const t = translations[lang] || translations["fr"];
+  const toggleLang = () => {
+    const newLang = lang === "fr" ? "en" : "fr";
+    setLang(newLang);
+    localStorage.setItem("lang", newLang);
+    if (userId) save("lang", newLang);
+  };
+
+  const garageInfo = active?.garage || { nom: "", tel: "" };
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const data = await load();
+      if (!data) return;
+      // Charger la langue depuis Firebase uniquement au premier chargement
+      if (!langLoaded) {
+        const savedLang = data.lang || localStorage.getItem("lang") || "fr";
+        setLang(savedLang);
+        localStorage.setItem("lang", savedLang);
+        setLangLoaded(true);
+      }
+      if (data.vehicles) {
+        const vs = JSON.parse(data.vehicles);
+        const vsWithPhotos = vs.map(v => {
+          // Nettoyer l'ancien ID "pneus" remplacé par pneusavant/pneusarriere
+          const checks = { ...v.checks };
+          if (checks.pneus) delete checks.pneus;
+          // Nettoyer l'historique des anciennes entrées pneus
+          const history = (v.history || []).map(h => ({
+            ...h,
+            actions: (h.actions || []).filter(a => !a.item?.startsWith("Pneus →") && !a.item?.startsWith("Tyres →"))
+          })).filter(h => h.actions.length > 0);
+          return { ...v, checks, history, photo: localStorage.getItem("photo_" + v.id) || null };
+        });
+        setVehicles(vsWithPhotos);
+
+        // Charger les véhicules partagés séparément
+        if (data.sharedVehicles) {
+          const shared = JSON.parse(data.sharedVehicles);
+          const sharedVehiclesData = await Promise.all(shared.map(async (sv) => {
+            try {
+              const ownerSnap = await getDoc(doc(db, "autocheck", sv.ownerId));
+              if (!ownerSnap.exists()) return null;
+              const ownerData = ownerSnap.data();
+              if (!ownerData.vehicles) return null;
+              const ownerVehicles = JSON.parse(ownerData.vehicles);
+              const vehicle = ownerVehicles.find(v => v.id === sv.vehicleId);
+              if (!vehicle) return null;
+              return { ...vehicle, isShared: true, ownerName: sv.vehicleName };
+            } catch { return null; }
+          }));
+          setSharedVehicles(sharedVehiclesData.filter(Boolean));
+        }
+      }
+      if (data.docs) {
+        const allDocs = JSON.parse(data.docs);
+        const seen = new Map();
+        const deduped = allDocs.sort((a, b) => b.id - a.id).filter(d => {
+          const key = `${d.type}_${d.vehicleId || "global"}`;
+          if (seen.has(key)) return false;
+          seen.set(key, true);
+          return true;
+        });
+        setDocs(deduped);
+      }
+      if (data.depenses) setDepenses(JSON.parse(data.depenses));
+    })();
+  }, [userId]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!userId || vehicles.length === 0) return;
+    const vehiclesNoPhoto = vehicles.filter(v => !v.isShared).map(({ photo, ...v }) => v);
+    save("vehicles", vehiclesNoPhoto);
+  }, [vehicles]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!userId) return;
+    save("depenses", depenses);
+  }, [depenses]); // eslint-disable-line
+
+  useEffect(() => {
+    if (!userId) return;
+    save("docs", docs);
+  }, [docs]); // eslint-disable-line
+
+  useEffect(() => {
+    localStorage.setItem("invoices", JSON.stringify(localInvoices));
+  }, [localInvoices]);
+
+  useEffect(() => {
+    if (!userId) { setVehicles([]); setActive(null); setDocs([]); setDepenses([]); }
+  }, [userId]);
+
+  const allVehicles = [...vehicles, ...sharedVehicles];
+
+  const PLAN = "ultra"; // "free" | "premium" | "ultra" — changer pour verrouiller
+  const isPremium = PLAN === "premium" || PLAN === "ultra";
+  const isUltra = PLAN === "ultra";
+
+  const checklist  = active ? (getChecklist(active.type, lang) || []) : [];
+  const prog       = getProgress(active, lang);
+  const alertCount = docs.filter(d => d.days <= 30).length;
+
+  const [showAbout, setShowAbout] = useState(false);
+  const [showPremium, setShowPremium] = useState(false);
+
+  const deleteAccount = async () => {
+    if (!window.confirm(t.supprimerCompteConfirm || "Êtes-vous sûr ? Cette action est irréversible.")) return;
+    try {
+      await user.delete();
+    } catch (e) {
+      alert("Reconnectez-vous et réessayez.");
+    }
+  };
+  const addVehicle = useCallback(() => {
+    if (!name.trim()) return;
+    const v = { id: Date.now(), name: name.trim(), immat: immat.trim().toUpperCase(), type, history: [], checks: {}, garage: { nom: "", tel: "" } };
+    setVehicles(prev => [...prev, v]);
+    setActive(v);
+    setName(""); setImmat("");
+    setTab("accueil");
+  }, [name, immat, type]);
+
+  const deleteVehicle = useCallback((id) => {
+    const vehicle = allVehicles.find(v => v.id === id);
+    if (vehicle?.isShared) return;
+    setVehicles(prev => prev.filter(v => v.id !== id));
+    setActive(prev => prev?.id === id ? null : prev);
+    // Supprimer docs et dépenses liés et sauvegarder immédiatement dans Firebase
+    setDocs(prev => {
+      const filtered = prev.filter(d => d.vehicleId !== id);
+      save("docs", filtered);
+      return filtered;
+    });
+    setDepenses(prev => {
+      const filtered = prev.filter(d => d.vehicleId !== id);
+      save("depenses", filtered);
+      return filtered;
+    });
+  }, [allVehicles, save]);
+
+  const leaveSharedVehicle = useCallback(async (vehicleId, ownerId) => {
+    try {
+      await removeSharedVehicle(userId, vehicleId, ownerId);
+      setSharedVehicles(prev => prev.filter(v => !(v.id === vehicleId)));
+      setActive(prev => prev?.id === vehicleId ? null : prev);
+    } catch (e) {
+      console.error("Erreur suppression partage:", e);
+    }
+  }, [userId]);
+
+  const updateCheck = useCallback((itemId, newState) => {
+    if (!active) return;
+    const today = new Date().toLocaleDateString("fr-FR");
+    const findLabel = (id) => {
+      for (const item of checklist) {
+        if (item.id === id) return item.label;
+        if (item.group && item.items) {
+          const sub = item.items.find(s => s.id === id);
+          if (sub) return sub.label;
+        }
+      }
+      return id;
+    };
+    const itemLabel = findLabel(itemId);
+    const activeId = active.id;
+    setVehicles(prev => {
+      const updated = prev.map(v => {
+        if (v.id !== activeId) return v;
+        const newChecks = { ...v.checks, [itemId]: newState };
+        const history = [...(v.history || [])];
+        const idx = history.findIndex(h => h.date === today);
+        const action = { item: `${itemLabel} → ${newState}` };
+        if (idx !== -1) {
+          // Remplacer l'action existante pour cet item si elle existe déjà aujourd'hui
+          const existingActionIdx = history[idx].actions.findIndex(a => a.item.startsWith(itemLabel + " →"));
+          if (existingActionIdx !== -1) {
+            const newActions = [...history[idx].actions];
+            newActions[existingActionIdx] = action;
+            history[idx] = { ...history[idx], actions: newActions };
+          } else {
+            history[idx] = { ...history[idx], actions: [...history[idx].actions, action] };
+          }
+        } else {
+          history.push({ date: today, actions: [action] });
+        }
+        return { ...v, checks: newChecks, history };
+      });
+      const newActive = updated.find(v => v.id === activeId);
+      if (newActive) setTimeout(() => setActive(newActive), 0);
+      return updated;
+    });
+  }, [active, checklist]);
+
+  const exportPDF = useCallback(() => {
+    if (!active) return;
+    const pdfdoc = new jsPDF();
+    pdfdoc.setFontSize(20); pdfdoc.text("Carnet d'entretien", 10, 15);
+    pdfdoc.setFontSize(14); pdfdoc.text(`${active.name}${active.immat ? " • " + active.immat : ""}`, 10, 25);
+    let y = 35;
+    [...(active.history || [])].reverse().forEach(h => {
+      pdfdoc.setFontSize(12); pdfdoc.text(h.date, 10, y); y += 6;
+      (h.actions || []).forEach(a => { pdfdoc.text("- " + a.item, 12, y); y += 6; });
+      y += 5;
+      if (y > 260) { pdfdoc.addPage(); y = 20; }
+    });
+    pdfdoc.save(`carnet-${active.name}.pdf`);
+  }, [active]);
+
+  const handleSaveGarage = useCallback((info) => {
+    if (!active) return;
+    setVehicles(prev => {
+      const updated = prev.map(v => v.id === active.id ? { ...v, garage: info } : v);
+      setActive(updated.find(v => v.id === active.id) ?? null);
+      return updated;
+    });
+  }, [active]);
+
+  if (authLoading) {
+    return (
+      <div style={{ maxWidth: 430, margin: "0 auto", minHeight: "100vh", background: "#000000", display: "flex", alignItems: "center", justifyContent: "center", color: C.muted, fontSize: 14, fontFamily: "-apple-system, 'SF Pro Display', sans-serif" }}>
+        ⏳ Chargement...
+      </div>
+    );
+  }
+
+  if (!user) return <LoginScreen />;
+
+  return (
+    <div style={{ maxWidth: 430, margin: "0 auto", minHeight: "100vh", background: "#000000", color: "#ffffff", fontFamily: "-apple-system, 'SF Pro Display', 'Segoe UI', sans-serif", position: "relative", paddingBottom: 100 }}>
+
+      {/* About Modal */}
+      {showAbout && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "#1a1a1a", borderRadius: 20, padding: 24, width: "100%", maxWidth: 380, border: "1px solid rgba(255,255,255,0.1)" }}>
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div style={{ fontSize: 40, marginBottom: 8 }}>🚗</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: C.blue }}>CHECKAR</div>
+              <div style={{ fontSize: 13, color: C.muted, marginTop: 4 }}>{t.version || "Version"} 1.0.0</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Carnet d'entretien intelligent</div>
+            </div>
+            <div style={{ background: "#2a2a2f", borderRadius: 12, padding: 14, marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 6 }}>Compte connecté</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{user?.email}</div>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+              <button onClick={() => { isPremium ? toggleLang() : setShowPremium(true); setShowAbout(false); }} style={{ flex: 1, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 12, color: C.text, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
+                {isPremium ? (lang === "fr" ? "🇬🇧 English" : "🇫🇷 Français") : "🔒 Langue"}
+              </button>
+              <button onClick={() => { if (isPremium) { setShowShare(true); setShowAbout(false); } else { setShowPremium(true); } }} style={{ flex: 1, background: "rgba(33,87,255,0.1)", border: "1px solid rgba(33,87,255,0.2)", borderRadius: 12, padding: 12, color: isPremium ? C.blue : C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
+                {isPremium ? "👨‍👩‍👧 Famille" : "🔒 Famille"}
+              </button>
+            </div>
+            <button onClick={deleteAccount} style={{ width: "100%", background: "rgba(252,63,53,0.1)", border: "1px solid rgba(252,63,53,0.3)", borderRadius: 12, padding: 14, color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+              {t.supprimerCompte || "🗑️ Supprimer mon compte"}
+            </button>
+            <button onClick={() => { setShowAbout(false); setTab("cgu"); }} style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, color: C.muted, cursor: "pointer", fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
+              📄 CGU & Politique de confidentialité
+            </button>
+            <button onClick={() => setShowAbout(false)} style={{ width: "100%", background: C.blue, border: "none", borderRadius: 12, padding: 14, color: "white", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* PremiumScreen */}
+      {showPremium && <PremiumScreen onClose={() => setShowPremium(false)} t={t} />}
+
+      {/* ShareScreen */}
+      {showShare && (
+        <ShareScreen
+          active={active}
+          userId={userId}
+          onClose={() => setShowShare(false)}
+          onVehicleJoined={() => {
+            load().then(data => {
+              if (data?.vehicles) {
+                const vs = JSON.parse(data.vehicles);
+                setVehicles(vs.map(v => ({ ...v, photo: localStorage.getItem("photo_" + v.id) || null })));
+              }
+            });
+          }}
+        />
+      )}
+
+      {/* ── Header ── */}
+      <div style={{ padding: "16px 20px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 50, background: "#000000", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <h1 style={{ color: C.text, fontSize: 22, fontWeight: 800, margin: 0 }}>
+          {tab === "secours" ? t.secours : t[tab] || TABS.find(t => t.id === tab)?.label}
+        </h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 10, color: C.muted }}>{syncStatus}</span>
+          <div style={{ position: "relative" }}>
+            <span style={{ fontSize: 22 }}>🔔</span>
+            {alertCount > 0 && (
+              <span style={{ position: "absolute", top: -4, right: -4, background: C.red, color: "white", borderRadius: "50%", width: 18, height: 18, fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800 }}>{alertCount}</span>
+            )}
+          </div>
+          <button onClick={() => setShowPremium(true)} title="Premium" style={{ background: "linear-gradient(135deg, #bf5af2, #8b5cf6)", border: "none", borderRadius: 8, padding: "5px 9px", color: "white", cursor: "pointer", fontSize: 12, fontWeight: 800 }}>💎</button>
+          <button onClick={() => setShowAbout(true)} title={t.aPropos || "À propos"} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "5px 9px", color: C.text, cursor: "pointer", fontSize: 14 }}>ℹ️</button>
+          <button onClick={() => logoutUser()} title="Déconnexion" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 8, padding: "5px 9px", color: C.red, cursor: "pointer", fontSize: 14 }}>⏏</button>
+        </div>
+      </div>
+
+      {/* ── Contenu ── */}
+      <div ref={contentRef} style={{ overflowY: "auto", maxHeight: "calc(100vh - 120px)" }}>
+        {tab === "accueil" && (
+          <AccueilScreen
+            vehicles={allVehicles} setVehicles={setVehicles} active={active} setActive={setActive} setTab={setTab}
+            name={name} setName={setName} immat={immat} setImmat={setImmat}
+            type={type} setType={setType} addVehicle={addVehicle} deleteVehicle={deleteVehicle}
+            leaveSharedVehicle={leaveSharedVehicle}
+            docs={docs} prog={prog} t={t}
+          />
+        )}
+        {tab === "checklist" && (
+          <ChecklistScreen active={active} checklist={checklist} prog={prog} updateCheck={updateCheck} setTab={setTab} t={t} isPremium={isPremium} onShowPremium={() => setShowPremium(true)} />
+        )}
+        {tab === "documents" && (
+          <DocumentsScreen
+            vehicles={allVehicles} active={active} setActive={setActive}
+            docTab={docTab} setDocTab={setDocTab}
+            docs={docs} setDocs={setDocs}
+            localInvoices={localInvoices} setLocalInvoices={setLocalInvoices}
+            garageInfo={garageInfo} onSaveGarage={handleSaveGarage} t={t}
+          />
+        )}
+        {tab === "depenses" && (
+          <DepensesScreen active={active} vehicles={allVehicles} setActive={setActive} depenses={depenses} setDepenses={setDepenses} t={t} />
+        )}
+        {tab === "historique" && (
+          <HistoriqueScreen active={active} vehicles={allVehicles} setActive={setActive} depenses={depenses} t={t} isUltra={isUltra} onShowPremium={() => setShowPremium(true)} />
+        )}
+        {tab === "rapport" && (
+          <RapportScreen active={active} checklist={checklist} prog={prog} docs={docs} exportPDF={exportPDF} localInvoices={localInvoices} depenses={depenses} t={t} />
+        )}
+        {tab === "secours" && (
+          <SecoursScreen active={active} setTab={setTab} docs={docs} t={t} />
+        )}
+        {tab === "cgu" && (
+          <CGUScreen onBack={() => { setShowAbout(false); setTab("accueil"); }} />
+        )}
+        {tab === "confidentialite" && (
+          <CGUScreen onBack={() => { setShowAbout(false); setTab("accueil"); }} showPrivacy={true} />
+        )}
+      </div>
+
+      {/* ── Nav bar ── */}
+      <nav style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 430, background: "#000000", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-around", padding: "10px 0 18px", zIndex: 100 }}>
+        {TABS.map(tab2 => {
+          const on = tab === tab2.id;
+          return (
+            <button key={tab2.id} onClick={() => setTab(tab2.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, cursor: "pointer", flex: 1, border: "none", background: "transparent", padding: "4px 0" }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: on ? C.blue : "#3A3A40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, boxShadow: on ? `0 4px 16px ${C.blue}66` : "none", transition: "all 0.2s" }}>{tab2.icon}</div>
+              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.3, color: on ? C.blue : "#8e8e93" }}>{(t[tab2.id] || tab2.label).toUpperCase()}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </div>
+  );
+}
