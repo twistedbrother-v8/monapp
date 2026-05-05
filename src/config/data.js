@@ -80,7 +80,15 @@ const MOTO_FR = [
   { id: "huile",  label: "Huile moteur", desc: "Niveau correct ? Pas de fuite ?",   icon: "🛢️" },
   { id: "chaine", label: "Chaîne",       desc: "Bien tendue et graissée ?",          icon: "⛓️" },
   { id: "freins", label: "Freins",       desc: "Plaquettes encore ok ?",             icon: "🔴" },
-  { id: "pneus",  label: "Pneus",        desc: "Pression et usure — vite fait.",     icon: "⚫" },
+  {
+    id: "pneus", label: "Pneus", icon: "⚫",
+    desc: "Pression et usure — vite fait.",
+    group: true,
+    items: [
+      { id: "pneusavant",   label: "Pneu avant",   desc: "Pression et usure avant ok ?",   icon: "⚫" },
+      { id: "pneusarriere", label: "Pneu arrière",  desc: "Pression et usure arrière ok ?", icon: "⚫" },
+    ],
+  },
   {
     id: "eclairage", label: "Éclairage", icon: "💡", desc: "Tout doit s'allumer", group: true,
     items: [
@@ -96,7 +104,15 @@ const MOTO_EN = [
   { id: "huile",  label: "Engine oil", desc: "Level ok? No leaks?",        icon: "🛢️" },
   { id: "chaine", label: "Chain",      desc: "Tight and lubed?",           icon: "⛓️" },
   { id: "freins", label: "Brakes",     desc: "Pads still ok?",             icon: "🔴" },
-  { id: "pneus",  label: "Tyres",      desc: "Pressure & wear — quick check.", icon: "⚫" },
+  {
+    id: "pneus", label: "Tyres", icon: "⚫",
+    desc: "Pressure & wear — quick check.",
+    group: true,
+    items: [
+      { id: "pneusavant",   label: "Front tyre",  desc: "Front pressure & wear ok?",  icon: "⚫" },
+      { id: "pneusarriere", label: "Rear tyre",   desc: "Rear pressure & wear ok?",   icon: "⚫" },
+    ],
+  },
   {
     id: "eclairage", label: "Lighting", icon: "💡", desc: "Everything should light up", group: true,
     items: [
@@ -111,24 +127,15 @@ const MOTO_EN = [
 export const getChecklist = (type, lang = "fr") => {
   const base = lang === "en" ? CHECKLIST_EN : CHECKLIST_FR;
   const moto = lang === "en" ? MOTO_EN : MOTO_FR;
-  const extra_fr = { fixations: { id: "fixations", label: "Fixations", desc: "Chargement bien arrimé ?", icon: "🔩" }, attelage: { id: "attelage", label: "Attelage", desc: "Remorque bien accrochée ?", icon: "🔗" } };
-  const extra_en = { fixations: { id: "fixations", label: "Load fixings", desc: "Cargo secured properly?", icon: "🔩" }, attelage: { id: "attelage", label: "Coupling", desc: "Trailer properly attached?", icon: "🔗" } };
-  const extra = lang === "en" ? extra_en : extra_fr;
-
   switch (type) {
-    case "moto":      return moto;
-    case "utilitaire": return [...base, extra.fixations];
-    case "camion":    return [...base, extra.attelage];
-    default:          return base;
+    case "moto": return moto;
+    default:     return base;
   }
 };
 
-// Compatibilité avec l'ancien code
 export const CHECKLIST_MAP = {
-  voiture:    CHECKLIST_FR,
-  utilitaire: [...CHECKLIST_FR, { id: "fixations", label: "Fixations", desc: "Chargement bien arrimé ?", icon: "🔩" }],
-  camion:     [...CHECKLIST_FR, { id: "attelage",  label: "Attelage",  desc: "Remorque bien accrochée ?", icon: "🔗" }],
-  moto:       MOTO_FR,
+  voiture: CHECKLIST_FR,
+  moto:    MOTO_FR,
 };
 
 export const getAllCheckIds = (checklist) => {
@@ -140,8 +147,8 @@ export const getAllCheckIds = (checklist) => {
   return ids;
 };
 
-export const TYPE_ICONS  = { voiture: "🚘", moto: "🏍️", utilitaire: "🚐", camion: "🚛" };
-export const TYPE_LABELS = { voiture: "Voiture", moto: "Moto", utilitaire: "Utilitaire", camion: "Camion" };
+export const TYPE_ICONS  = { voiture: "🚘", moto: "🏍️" };
+export const TYPE_LABELS = { voiture: "Voiture", moto: "Moto" };
 export const STATE_COLOR = { OK: "#22ff00", BIENTOT: "#ffa200", PROBLEME: "#ff0000" };
 export const STATE_LABEL = { OK: "✓", BIENTOT: "!", PROBLEME: "✗" };
 

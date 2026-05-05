@@ -4,7 +4,8 @@ import { jsPDF } from "jspdf";
 import { logoutUser } from "./config/firebase";
 import { useAuth } from "./hooks/useAuth";
 import { useFirestore } from "./hooks/useFirestore";
-import { loadSharedVehicles, removeSharedVehicle } from "./config/firestore";
+import { useVehicleManager } from "./hooks/useVehicleManager";
+import { removeSharedVehicle } from "./config/firestore";
 import { db } from "./config/firebase";
 import { getDoc, doc } from "firebase/firestore";
 import { CHECKLIST_MAP, getChecklist } from "./config/data";
@@ -23,6 +24,7 @@ import LoginScreen from "./components/LoginScreen";
 import ShareScreen from "./components/ShareScreen";
 import CGUScreen from "./components/CGUScreen";
 import PremiumScreen from "./components/PremiumScreen";
+import TutoScreen from "./components/TutoScreen";
 import "./App.css";
 
 const TABS = [
@@ -52,6 +54,7 @@ export default function App() {
   const [vehicles,      setVehicles]      = useState([]);
   const [sharedVehicles, setSharedVehicles] = useState([]);
   const [active,        setActive]        = useState(null);
+  const { loadVehicles } = useVehicleManager(userId, load, save);
   const contentRef = React.useRef(null);
 
   const setTab = useCallback((newTab) => {
@@ -187,14 +190,35 @@ export default function App() {
 
   const [showAbout, setShowAbout] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
+  const [showTuto, setShowTuto] = useState(false);
+
+  useEffect(() => {
+    if (user && !localStorage.getItem("tuto_seen")) {
+      setShowTuto(true);
+    }
+  }, [user]);
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const deleteAccount = async () => {
-    if (!window.confirm(t.supprimerCompteConfirm || "Êtes-vous sûr ? Cette action est irréversible.")) return;
+    if (!deletePassword) { setDeleteError("Entrez votre mot de passe."); return; }
+    setDeleteLoading(true);
+    setDeleteError("");
     try {
+      const { EmailAuthProvider, reauthenticateWithCredential } = await import("firebase/auth");
+      const credential = EmailAuthProvider.credential(user.email, deletePassword);
+      await reauthenticateWithCredential(user, credential);
       await user.delete();
     } catch (e) {
-      alert("Reconnectez-vous et réessayez.");
+      if (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") {
+        setDeleteError("Mot de passe incorrect.");
+      } else {
+        setDeleteError("Erreur. Réessayez.");
+      }
     }
+    setDeleteLoading(false);
   };
   const addVehicle = useCallback(() => {
     if (!name.trim()) return;
@@ -335,9 +359,30 @@ export default function App() {
                 {isPremium ? "👨‍👩‍👧 Famille" : "🔒 Famille"}
               </button>
             </div>
-            <button onClick={deleteAccount} style={{ width: "100%", background: "rgba(252,63,53,0.1)", border: "1px solid rgba(252,63,53,0.3)", borderRadius: 12, padding: 14, color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
-              {t.supprimerCompte || "🗑️ Supprimer mon compte"}
-            </button>
+            {!showDeleteConfirm ? (
+              <button onClick={() => setShowDeleteConfirm(true)} style={{ width: "100%", background: "rgba(252,63,53,0.1)", border: "1px solid rgba(252,63,53,0.3)", borderRadius: 12, padding: 14, color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                {t.supprimerCompte || "🗑️ Supprimer mon compte"}
+              </button>
+            ) : (
+              <div style={{ background: "rgba(252,63,53,0.1)", border: "1px solid rgba(252,63,53,0.3)", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: C.red, marginBottom: 8 }}>⚠️ Confirmer la suppression</div>
+                <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>Cette action est irréversible. Entrez votre mot de passe pour confirmer.</div>
+                <input
+                  type="password"
+                  placeholder="Votre mot de passe"
+                  value={deletePassword}
+                  onChange={e => { setDeletePassword(e.target.value); setDeleteError(""); }}
+                  style={{ width: "100%", background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "10px 14px", color: "white", fontSize: 13, boxSizing: "border-box", marginBottom: 8, outline: "none" }}
+                />
+                {deleteError && <div style={{ fontSize: 12, color: C.red, marginBottom: 8 }}>{deleteError}</div>}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { setShowDeleteConfirm(false); setDeletePassword(""); setDeleteError(""); }} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: 10, color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>Annuler</button>
+                  <button onClick={deleteAccount} disabled={deleteLoading} style={{ flex: 1, background: C.red, border: "none", borderRadius: 10, padding: 10, color: "white", cursor: "pointer", fontWeight: 700, fontSize: 12, opacity: deleteLoading ? 0.7 : 1 }}>
+                    {deleteLoading ? "⏳..." : "🗑️ Supprimer"}
+                  </button>
+                </div>
+              </div>
+            )}
             <button onClick={() => { setShowAbout(false); setTab("cgu"); }} style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, color: C.muted, cursor: "pointer", fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
               📄 CGU & Politique de confidentialité
             </button>
@@ -347,6 +392,12 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Tutoriel premier lancement */}
+      {showTuto && <TutoScreen onClose={() => { 
+        localStorage.setItem("tuto_seen", "1"); 
+        setShowTuto(false); 
+      }} />}
 
       {/* PremiumScreen */}
       {showPremium && <PremiumScreen onClose={() => setShowPremium(false)} t={t} />}
@@ -411,7 +462,7 @@ export default function App() {
           />
         )}
         {tab === "depenses" && (
-          <DepensesScreen active={active} vehicles={allVehicles} setActive={setActive} depenses={depenses} setDepenses={setDepenses} t={t} />
+          <DepensesScreen active={active} vehicles={allVehicles} setVehicles={setVehicles} setActive={setActive} depenses={depenses} setDepenses={setDepenses} t={t} />
         )}
         {tab === "historique" && (
           <HistoriqueScreen active={active} vehicles={allVehicles} setActive={setActive} depenses={depenses} t={t} isUltra={isUltra} onShowPremium={() => setShowPremium(true)} />

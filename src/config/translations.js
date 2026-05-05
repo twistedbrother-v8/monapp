@@ -172,6 +172,23 @@ export const translations = {
     servicesProches: "Services proches",
     googleMapsOuvre: "Google Maps s'ouvre près de toi 📍",
     retour: "← Retour",
+    // Certificat
+    certificatEntretien: "🔗 CERTIFICAT D'ENTRETIEN",
+    bientotBlockchain: "Powered by CHECKAR — Bientôt sur Blockchain",
+    idCertificat: "ID CERTIFICAT",
+    verifications: "Vérifications",
+    interventions: "Interventions",
+    genere: "Généré le",
+    scannerCertificat: "Scannez ce QR code pour vérifier l'authenticité du carnet d'entretien",
+    // Scanner OCR
+    scannerFacture: "📷 Scanner une facture",
+    analyseEnCours: "⏳ Analyse en cours...",
+    // Bienvenue
+    bienvenue: "Bienvenue sur CHECKAR ! 🚗",
+    bienvenueMsg: "Commencez par ajouter votre véhicule pour suivre son entretien.",
+    // Kilométrage
+    kilometrage: "Kilométrage",
+    kmActuel: "KM ACTUEL",
     procedureAccident: "🚨 Procédure accident",
     numerosUrgence: "NUMÉROS D'URGENCE",
     pasNumeroAssurance: "📋 Pas de numéro d'assurance enregistré",
@@ -343,6 +360,26 @@ export const translations = {
     supprimerCompte: "Delete my account",
     supprimerCompteConfirm: "Are you sure? This action cannot be undone.",
     supprimerCompteBtn: "🗑️ Delete permanently",
+    kilometrageCompteur: "ODOMETER READING",
+    parcourus: "driven this month",
+    kmActuel: "TOTAL VEHICLE KM",
+    // Certificat
+    certificatEntretien: "🔗 MAINTENANCE CERTIFICATE",
+    bientotBlockchain: "Powered by CHECKAR — Coming to Blockchain",
+    idCertificat: "CERTIFICATE ID",
+    verifications: "Checks",
+    interventions: "Services",
+    genere: "Generated on",
+    scannerCertificat: "Scan this QR code to verify the authenticity of the maintenance log",
+    // Scanner OCR
+    scannerFacture: "📷 Scan an invoice",
+    analyseEnCours: "⏳ Analysing...",
+    // Bienvenue
+    bienvenue: "Welcome to CHECKAR! 🚗",
+    bienvenueMsg: "Start by adding your vehicle to track its maintenance.",
+    // Kilométrage
+    kilometrage: "Mileage",
+    kmActuel: "CURRENT KM",
     enCasAccident: "In case of accident",
     procedureSecurite: "Procedure · Safety · Assistance",
     guideConstat: "European accident report guide",

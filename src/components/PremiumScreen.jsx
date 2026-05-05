@@ -48,7 +48,7 @@ export default function PremiumScreen({ onClose, t = {} }) {
         "Dépenses & km — 1 an",
         "Historique — 1 an",
         "Partage familial 👨‍👩‍👧",
-        "Export PDF avancé",
+        "Export PDF 📄",
       ],
     },
     {
@@ -62,6 +62,7 @@ export default function PremiumScreen({ onClose, t = {} }) {
         "Tout du Premium +",
         "Dépenses & km illimité",
         "Historique illimité",
+        "Export PDF + Scanner OCR 📷",
         "Notifications push 🔔",
         "Bons plans garages 🏪",
         "Support prioritaire ⚡",

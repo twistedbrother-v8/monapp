@@ -72,18 +72,21 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
   const [editName, setEditName] = useState("");
   const [editImmat, setEditImmat] = useState("");
   const [editType, setEditType] = useState("voiture");
+  const [editKm, setEditKm] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const startEdit = () => {
     setEditName(active.name);
     setEditImmat(active.immat || "");
     setEditType(active.type);
+    setEditKm(active.km || "");
     setEditMode(true);
   };
 
   const saveEdit = () => {
     if (!editName.trim()) return;
     setVehicles(prev => {
-      const updated = prev.map(v => v.id === active.id ? { ...v, name: editName.trim(), immat: editImmat.trim().toUpperCase(), type: editType } : v);
+      const updated = prev.map(v => v.id === active.id ? { ...v, name: editName.trim(), immat: editImmat.trim().toUpperCase(), type: editType, km: editKm } : v);
       setActive(updated.find(v => v.id === active.id));
       return updated;
     });
@@ -92,14 +95,19 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
   if (!active) {
     return (
       <div style={{ padding: "20px 16px" }}>
+        {vehicles.length === 0 && (
+          <div style={{ background: "linear-gradient(135deg, #1a2a4a, #2157FF22)", border: `1px solid ${C.blue}33`, borderRadius: 18, padding: 20, marginBottom: 16, textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>🚗</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.text, marginBottom: 6 }}>{t.bienvenue || "Bienvenue sur CHECKAR ! 🚗"}</div>
+            <div style={{ fontSize: 13, color: C.muted, lineHeight: 1.6 }}>{t.bienvenueMsg || "Commencez par ajouter votre véhicule pour suivre son entretien."}</div>
+          </div>
+        )}
         <div style={{ background: C.surface, borderRadius: 20, padding: 20, marginBottom: 16 }}>
           <p style={{ color: C.muted2, marginBottom: 16, marginTop: 0, fontSize: 12, fontWeight: 700, letterSpacing: 1 }}>{t.ajouterVehicule || '+ AJOUTER UN VÉHICULE'}</p>
           <div style={{ fontSize: 11, color: C.muted, marginBottom: 6, fontWeight: 700 }}>TYPE</div>
           <select value={type} onChange={e => setType(e.target.value)} style={input}>
             <option value="voiture">🚘 Voiture</option>
             <option value="moto">🏍️ Moto</option>
-            <option value="utilitaire">🚐 Utilitaire</option>
-            <option value="camion">🚛 Camion</option>
           </select>
           <div style={{ fontSize: 11, color: C.muted, marginBottom: 6, fontWeight: 700 }}>NOM</div>
           <input style={input} value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Peugeot 208..." />
@@ -133,6 +141,7 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
   const hasProb    = vals.includes("PROBLEME");
   const lastEntry  = active.history?.[active.history.length - 1];
   const alertDocs  = docs.filter(d => !active || d.vehicleId === active?.id);
+  const kmTotal    = active.km ? parseInt(active.km).toLocaleString() : null;
 
   const score = prog.total === 0 ? 0 : Math.round((prog.ok / prog.total) * 100);
   const scoreColor = score >= 75 ? C.green : score >= 40 ? C.yellow : C.red;
@@ -191,13 +200,23 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
           <div style={{ fontSize: 18, fontWeight: 800, color: "white" }}>{active.name}</div>
           {active.immat && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>{active.immat}</div>}
         </div>
-        <button onClick={() => active.isShared ? leaveSharedVehicle?.(active.id, active.ownerId) : deleteVehicle(active.id)} style={{ position: "absolute", top: 10, left: 14, zIndex: 10, background: active?.isShared ? "rgba(255,161,0,0.15)" : "rgba(252,63,53,0.15)", border: `1px solid ${active?.isShared ? "rgba(255,161,0,0.3)" : "rgba(252,63,53,0.3)"}`, borderRadius: 8, padding: "4px 10px", color: active?.isShared ? C.yellow : C.red, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>{active?.isShared ? "🚪 Quitter" : "🗑️"}</button>
+        <button onClick={() => active.isShared ? leaveSharedVehicle?.(active.id, active.ownerId) : setConfirmDelete(true)} style={{ position: "absolute", top: 10, left: 14, zIndex: 10, background: active?.isShared ? "rgba(255,161,0,0.15)" : "rgba(252,63,53,0.15)", border: `1px solid ${active?.isShared ? "rgba(255,161,0,0.3)" : "rgba(252,63,53,0.3)"}`, borderRadius: 8, padding: "4px 10px", color: active?.isShared ? C.yellow : C.red, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>{active?.isShared ? "🚪 Quitter" : "🗑️"}</button>
         {!active.isShared && (
           <button onClick={startEdit} style={{ position: "absolute", top: 10, left: 60, zIndex: 10, background: "rgba(33,87,255,0.15)", border: "1px solid rgba(33,87,255,0.3)", borderRadius: 8, padding: "4px 10px", color: C.blue, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>✏️</button>
         )}
       </div>
 
-      {/* Formulaire de modification */}
+      {/* Modal confirmation suppression */}
+      {confirmDelete && (
+        <div style={{ margin: "10px 16px 0", background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 16, padding: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C.red, marginBottom: 8 }}>🗑️ Supprimer {active.name} ?</div>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>Cette action supprimera le véhicule et toutes ses données. Elle est irréversible.</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setConfirmDelete(false)} style={{ flex: 1, background: C.surface, border: "none", borderRadius: 12, padding: 12, color: C.muted, cursor: "pointer", fontWeight: 700 }}>Annuler</button>
+            <button onClick={() => { deleteVehicle(active.id); setConfirmDelete(false); }} style={{ flex: 1, background: C.red, border: "none", borderRadius: 12, padding: 12, color: "white", cursor: "pointer", fontWeight: 700 }}>🗑️ Supprimer</button>
+          </div>
+        </div>
+      )}
       {editMode && (
         <div style={{ margin: "10px 16px 0", background: C.surface, borderRadius: 16, padding: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: C.text, marginBottom: 12 }}>✏️ Modifier le véhicule</div>
@@ -205,13 +224,13 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
           <select value={editType} onChange={e => setEditType(e.target.value)} style={input}>
             <option value="voiture">🚘 Voiture</option>
             <option value="moto">🏍️ Moto</option>
-            <option value="utilitaire">🚐 Utilitaire</option>
-            <option value="camion">🚛 Camion</option>
           </select>
           <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>NOM</div>
           <input style={input} value={editName} onChange={e => setEditName(e.target.value)} placeholder="Ex: Peugeot 208..." />
           <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>IMMATRICULATION</div>
           <input style={{ ...input, textTransform: "uppercase", letterSpacing: 2 }} value={editImmat} onChange={e => setEditImmat(e.target.value)} placeholder="AB-123-CD" />
+          <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.kmActuel || "KILOMÉTRAGE ACTUEL"}</div>
+          <input type="number" style={input} value={editKm} onChange={e => setEditKm(e.target.value)} placeholder="Ex: 85000" />
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={() => setEditMode(false)} style={{ flex: 1, background: C.surface, border: "none", borderRadius: 12, padding: 12, color: C.muted, cursor: "pointer", fontWeight: 700 }}>Annuler</button>
             <button onClick={saveEdit} style={{ flex: 2, background: C.blue, border: "none", borderRadius: 12, padding: 12, color: "white", cursor: "pointer", fontWeight: 700 }}>✅ Enregistrer</button>
@@ -254,18 +273,19 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
         {alertDocs.length > 0 && (
           <div style={{ background: C.surface, borderRadius: 14, padding: "8px 12px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>RAPPELS</div>
+              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{t.rappels || "RAPPELS"}</div>
               <span style={{ background: alertDocs.some(d => d.days <= 15) ? C.red : C.yellow, color: "black", borderRadius: 20, padding: "1px 7px", fontSize: 9, fontWeight: 800 }}>{alertDocs.length}</span>
             </div>
             {alertDocs.map(d => {
               const col = d.days <= 0 ? C.red : d.days <= 15 ? C.red : d.days <= 30 ? C.yellow : C.green;
+              const labelTrad = d.type === "assurance" ? (t.assurance?.replace("🛡️ ", "") || d.label) : d.type === "controle" ? (t.controleTechnique?.replace("🚗 ", "") || d.label) : d.type === "revision" ? (t.revision || d.label) : d.label;
               return (
                 <div key={d.id} onClick={() => setTab("documents")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", cursor: "pointer" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div style={{ width: 24, height: 24, borderRadius: 8, background: col + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>{d.icon}</div>
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{d.label}</div>
-                      <div style={{ fontSize: 10, color: col, fontWeight: 600 }}>{d.days <= 0 ? "Expiré 🔴" : `Dans ${d.days} jours`}</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{labelTrad}</div>
+                      <div style={{ fontSize: 10, color: col, fontWeight: 600 }}>{d.days <= 0 ? (t.expire || "Expiré 🔴") : `${t.dans || "Dans"} ${d.days} ${t.jours || "jours"}`}</div>
                     </div>
                   </div>
                   <div style={{ fontSize: 10, color: C.muted }}>{d.date} ›</div>
@@ -284,18 +304,26 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
           <div style={{ display: "flex", gap: 16 }}>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 22, fontWeight: 900, color: C.green }}>{prog.ok}</div>
-              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700 }}>OK</div>
+              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700 }}>{t.ok || "OK"}</div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 22, fontWeight: 900, color: C.yellow }}>{vals.filter(v => v === "BIENTOT").length}</div>
-              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700 }}>BIENTÔT</div>
+              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700 }}>{t.bientot || "BIENTÔT"}</div>
             </div>
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 22, fontWeight: 900, color: prog.problems > 0 ? C.red : C.muted }}>{prog.problems}</div>
-              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700 }}>PROBLÈME</div>
+              <div style={{ fontSize: 9, color: C.muted, fontWeight: 700 }}>{t.probleme || "PROBLÈME"}</div>
             </div>
           </div>
         </div>
+
+        {/* 3b — Kilométrage */}
+        {kmTotal && (
+          <div style={{ background: C.surface, borderRadius: 18, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ fontSize: 9, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{t.kmActuel || "KM TOTAL VÉHICULE"}</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: C.text }}>{kmTotal} <span style={{ fontSize: 12, color: C.muted }}>km</span></div>
+          </div>
+        )}
 
         {/* 4 — On fait le tour */}
         <button style={{ background: C.blue, color: "white", border: "none", borderRadius: 18, padding: 16, fontSize: 15, fontWeight: 800, cursor: "pointer", letterSpacing: 0.5, boxShadow: `0 4px 20px ${C.blue}55` }} onClick={() => setTab("checklist")}>
@@ -352,11 +380,11 @@ function GroupItem({ item, checks, onUpdate, t = {} }) {
   const hasProb = states.some(s => s === "PROBLEME");
   const hasBientot = states.some(s => s === "BIENTOT");
   const allDone = states.every(s => s);
-  const groupColor = hasProb ? C.red : hasBientot ? C.yellow : allDone ? C.green : C.muted;
+  const groupColor = hasProb ? C.red : hasBientot ? C.yellow : allDone ? C.green : C.blue;
 
   return (
     <div style={{ marginBottom: 8 }}>
-      <div onClick={() => setOpen(o => !o)} style={{ background: C.surface, borderRadius: 16, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", border: `1px solid ${allDone ? groupColor + "44" : "transparent"}`, marginBottom: open ? 6 : 0 }}>
+      <div onClick={() => setOpen(o => !o)} style={{ background: C.bg, borderRadius: 16, padding: "12px 14px", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", border: `1px solid ${allDone ? groupColor + "44" : C.border}`, marginBottom: open ? 6 : 0 }}>
         <div style={{ width: 44, height: 44, borderRadius: 14, flexShrink: 0, background: groupColor + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>{item.icon}</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{item.label}</div>
@@ -367,10 +395,11 @@ function GroupItem({ item, checks, onUpdate, t = {} }) {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          <div style={{ display: "flex", gap: 5 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             {[[C.green, "OK"], [C.yellow, "BIENTOT"], [C.red, "PROBLEME"]].map(([c, st], i) => {
               const on = states.some(s => s === st);
-              return <div key={i} style={{ width: 32, height: 32, borderRadius: 8, background: on ? c : c + "22", boxShadow: on ? `0 0 8px ${c}88` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, color: on ? "#000" : c + "66" }}>{on ? { OK: "✓", BIENTOT: "!", PROBLEME: "✗" }[st] : ""}</div>;
+              const sym = { OK: "✓", BIENTOT: "!", PROBLEME: "✗" }[st];
+              return <div key={i} style={{ width: 34, height: 34, borderRadius: 10, background: on ? c : c + "22", boxShadow: on ? `0 0 12px ${c}88` : "none", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 900, color: on ? "#000" : c + "66" }}>{on ? sym : ""}</div>;
             })}
           </div>
           <span style={{ color: C.muted, fontSize: 18, display: "inline-block", transition: "transform 0.2s", transform: open ? "rotate(90deg)" : "none" }}>›</span>
@@ -786,11 +815,50 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
 }
 
 // ─── DÉPENSES ─────────────────────────────────────────────────────
-export function DepensesScreen({ active, vehicles, setActive, depenses, setDepenses, t = {} }) {
+export function DepensesScreen({ active, vehicles, setVehicles, setActive, depenses, setDepenses, t = {} }) {
   const [sousOnglet, setSousOnglet] = useState("general");
   const [showForm, setShowForm] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
   const [form, setForm] = useState({ date: "", montant: "", categorie: t.catGarage || "Garage", description: "", km: "", prixCarburant: "", litres: "" });
+  const [scanning, setScanning] = useState(false);
+  const [scanPhoto, setScanPhoto] = useState(null);
+
+  const scanFacture = async (photoData) => {
+    setScanning(true);
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 500,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: "image/jpeg", data: photoData.split(",")[1] } },
+              { type: "text", text: `Analyse cette facture de garage/station service et extrais les informations. Réponds UNIQUEMENT en JSON avec ce format exact : {"date": "YYYY-MM-DD", "montant": "XX.XX", "description": "description courte des travaux", "categorie": "Garage"} . Si tu ne trouves pas une info, mets "" pour cette valeur. La date doit être au format YYYY-MM-DD.` }
+            ]
+          }]
+        })
+      });
+      const data = await response.json();
+      const text = data.content?.[0]?.text || "";
+      const clean = text.replace(/```json|```/g, "").trim();
+      const result = JSON.parse(clean);
+      setForm(f => ({
+        ...f,
+        date: result.date || f.date,
+        montant: result.montant || f.montant,
+        description: result.description || f.description,
+        categorie: result.categorie || f.categorie,
+      }));
+      setShowForm(true);
+      setScanPhoto(null);
+    } catch (e) {
+      alert("Impossible de lire la facture. Remplissez manuellement.");
+    }
+    setScanning(false);
+  };
 
   if (!active) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}><div style={{ fontSize: 48, marginBottom: 12 }}>💰</div><div style={{ fontWeight: 600 }}>{t.choisirVehicule || "Choisis un véhicule depuis l'accueil"}</div></div>;
 
@@ -814,6 +882,15 @@ export function DepensesScreen({ active, vehicles, setActive, depenses, setDepen
     } else {
       if (!form.prixCarburant || !form.date || !form.km) return;
       setDepenses(p => [...p, { id: Date.now(), type: "carburant", date: form.date, montant: form.prixCarburant, km: form.km, litres: form.litres, vehicleId: active.id, vehicleName: active.name }]);
+      // Mettre à jour le kilométrage du véhicule automatiquement
+      if (setVehicles && form.km) {
+        const newKm = parseInt(form.km) || 0;
+        const currentKm = parseInt(active.km) || 0;
+        if (newKm > currentKm) {
+          setVehicles(prev => prev.map(v => v.id === active.id ? { ...v, km: String(newKm) } : v));
+          setActive(prev => prev?.id === active.id ? { ...prev, km: String(newKm) } : prev);
+        }
+      }
     }
     setForm({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "" });
     setShowForm(false);
@@ -829,7 +906,7 @@ export function DepensesScreen({ active, vehicles, setActive, depenses, setDepen
         <div>
           <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{t.ceMoisCi || "CE MOIS-CI"}</div>
           <div style={{ fontSize: 32, fontWeight: 900, color: C.text, marginTop: 2 }}>{totalMois.toFixed(2)} €</div>
-          {kmMois > 0 && <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>🛣️ {kmMois} km parcourus</div>}
+          {kmMois > 0 && <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>🛣️ {kmMois.toLocaleString()} km {t.parcourus || "parcourus ce mois"}</div>}
           {(() => {
             const litresMois = depCarb.filter(d => d.date?.startsWith(moisActuel) && d.litres).reduce((s, d) => s + parseFloat(d.litres), 0);
             if (litresMois > 0 && kmMois > 0) {
@@ -870,6 +947,16 @@ export function DepensesScreen({ active, vehicles, setActive, depenses, setDepen
               )}
             </div>
           ))}
+          {/* Bouton scanner facture */}
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(33,87,255,0.1)", border: `1px solid ${C.blue}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.blue, fontWeight: 700, fontSize: 14 }}>
+            {scanning ? "⏳ Analyse en cours..." : "📷 Scanner une facture"}
+            <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
+              const file = e.target.files[0]; if (!file) return;
+              const reader = new FileReader();
+              reader.onload = ev => scanFacture(ev.target.result);
+              reader.readAsDataURL(file);
+            }} />
+          </label>
           <button style={btn({ background: showForm ? C.surface : C.blue, color: showForm ? C.muted : "white", boxShadow: "none", marginBottom: 12 })} onClick={() => setShowForm(f => !f)}>{showForm ? (t.annuler || "✕ Annuler") : (t.ajouterDepense || "➕ Ajouter une dépense")}</button>
           {showForm && (
             <div style={card({ padding: 20 })}>
@@ -918,7 +1005,7 @@ export function DepensesScreen({ active, vehicles, setActive, depenses, setDepen
             <div style={card({ padding: 20 })}>
               <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.date || "DATE"}</div>
               <input type="date" style={input} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.kilometrage || "KILOMÉTRAGE"}</div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.kilometrageCompteur || "KILOMÉTRAGE DU COMPTEUR"} *</div>
               <input type="number" style={input} placeholder="Ex: 85000" value={form.km} onChange={e => setForm(f => ({ ...f, km: e.target.value }))} />
               <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.prix || "PRIX (€)"}</div>
               <input type="number" style={input} placeholder="Ex: 65.50" value={form.prixCarburant} onChange={e => setForm(f => ({ ...f, prixCarburant: e.target.value }))} />
@@ -1174,17 +1261,62 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
 
       <button style={btn()} onClick={exportPDF}>{t.telechargerPDF || "📄 Télécharger le rapport (PDF)"}</button>
 
+      {/* Certificat d'entretien */}
       {(() => {
-        const depGarage = (depenses || []).filter(d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage");
-        if (depGarage.length === 0) return null;
-        const qrData = encodeURIComponent(JSON.stringify({ vehicule: active.name, immat: active.immat || "", interventions: depGarage.map(d => ({ date: new Date(d.date).toLocaleDateString("fr-FR"), description: d.description, montant: d.montant + " €" })) }));
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+        const history = active.history || [];
+        const depGarage = (depenses || []).filter(d => d.vehicleId === active.id && d.type === "general");
+        if (history.length === 0 && depGarage.length === 0) return null;
+
+        // Génération hash unique basé sur les données du véhicule
+        const dataToHash = JSON.stringify({
+          id: active.id,
+          name: active.name,
+          immat: active.immat,
+          history: history.length,
+          depenses: depGarage.length,
+          lastUpdate: history[history.length - 1]?.date || "",
+        });
+        const hash = btoa(dataToHash).substring(0, 32).toUpperCase();
+        const certId = `CHK-${active.id.toString().slice(-6)}-${hash.substring(0, 8)}`;
+        const today = new Date().toLocaleDateString("fr-FR");
+
+        const certData = {
+          certificat: certId,
+          vehicule: active.name,
+          immat: active.immat || "—",
+          verifications: history.length,
+          depenses: depGarage.length,
+          date: today,
+          app: "CHECKAR",
+        };
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify(certData))}`;
+
         return (
-          <div style={card({ textAlign: "center", padding: 24 })}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: C.muted2, marginBottom: 16, letterSpacing: 0.5 }}>{t.qrCode || "📱 QR CODE — HISTORIQUE GARAGE"}</div>
-            <img src={qrUrl} alt="QR Code garage" style={{ width: 180, height: 180, borderRadius: 12 }} />
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 12 }}>{t.scannerQR || "Scannez pour voir l'historique des interventions garage"}</div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 4 }}>{active.name}{active.immat ? ` · ${active.immat}` : ""} · {depGarage.length} {depGarage.length > 1 ? (t.interventions || "interventions") : (t.intervention || "intervention")}</div>
+          <div style={{ background: "linear-gradient(135deg, #1a2a1a, #0a1a0a)", border: "2px solid #22ff0044", borderRadius: 20, padding: 20, marginTop: 8, textAlign: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#22ff00", letterSpacing: 2, marginBottom: 4 }}>🔗 CERTIFICAT D'ENTRETIEN</div>
+            <div style={{ fontSize: 10, color: C.muted, marginBottom: 16 }}>Powered by CHECKAR — Bientôt sur Blockchain</div>
+            <img src={qrUrl} alt="QR Certificat" style={{ width: 160, height: 160, borderRadius: 12, border: "2px solid #22ff0033" }} />
+            <div style={{ marginTop: 12, background: "rgba(0,0,0,0.4)", borderRadius: 10, padding: "10px 14px" }}>
+              <div style={{ fontSize: 10, color: C.muted, marginBottom: 4 }}>ID CERTIFICAT</div>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "#22ff00", letterSpacing: 2, fontFamily: "monospace" }}>{certId}</div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-around", marginTop: 12 }}>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#22ff00" }}>{history.length}</div>
+                <div style={{ fontSize: 10, color: C.muted }}>Vérifications</div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#22ff00" }}>{depGarage.length}</div>
+                <div style={{ fontSize: 10, color: C.muted }}>Interventions</div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: "#22ff00" }}>{today}</div>
+                <div style={{ fontSize: 10, color: C.muted }}>Généré le</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 10, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
+              Scannez ce QR code pour vérifier l'authenticité du carnet d'entretien
+            </div>
           </div>
         );
       })()}
