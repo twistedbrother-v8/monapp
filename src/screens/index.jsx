@@ -1306,7 +1306,7 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
       {/* Certificat d'entretien */}
       {(() => {
         const history = active.history || [];
-        const depGarage = (depenses || []).filter(d => d.vehicleId === active.id && d.type === "general");
+        const depGarage = (depenses || []).filter(d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage");
         if (history.length === 0 && depGarage.length === 0) return null;
 
         // Génération hash unique basé sur les données du véhicule
