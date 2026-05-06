@@ -776,38 +776,6 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
             </div>
           )}
 
-          <div style={sCard({ padding: 20 })}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 14 }}>{t.facturesDocuments || "📁 Factures & documents"}</div>
-            <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "20px 16px", background: C.blue + "15", border: `2px dashed ${C.blue}44`, borderRadius: 14, cursor: "pointer", marginBottom: 14 }}>
-              <span style={{ fontSize: 32 }}>📄</span>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontWeight: 700, color: C.blue, fontSize: 14 }}>{t.ajouterFacture || "Ajouter une facture"}</div>
-                <div style={{ fontSize: 11, color: C.muted, marginTop: 3 }}>{t.pdfImageDoc || "PDF, image, ou tout document"}</div>
-              </div>
-              <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx" style={{ display: "none" }} onChange={handleUpload} />
-            </label>
-            {myInvoices.length === 0 ? <div style={{ textAlign: "center", color: C.muted, fontSize: 13, padding: "8px 0" }}>{t.aucuneFacture || "Pas encore de facture 📄"}</div> : myInvoices.map(inv => {
-              const isImg = inv.type?.startsWith("image/"); const isPdf = inv.type === "application/pdf";
-              return (
-                <div key={inv.id} style={{ background: "#1a1a1a", borderRadius: 12, marginBottom: 8, padding: "10px 14px", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontSize: 22 }}>{isPdf ? "📄" : isImg ? "🖼️" : "📎"}</span>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13, maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: C.text }}>{inv.name}</div>
-                        <div style={{ fontSize: 11, color: C.muted }}>{inv.size} · {inv.date}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button onClick={() => { const a = document.createElement("a"); a.href = inv.data; a.download = inv.name; a.click(); }} style={{ background: C.blue + "25", border: "none", color: C.blue, borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 14 }}>⬇</button>
-                      <button onClick={() => { setLocalInvoices(p => p.filter(i => i.id !== inv.id)); }} style={{ background: C.red + "22", border: "none", color: C.red, borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 14 }}>✕</button>
-                    </div>
-                  </div>
-                  {isImg && <img src={inv.data} alt={inv.name} style={{ width: "100%", borderRadius: 8, maxHeight: 160, objectFit: "cover", marginTop: 8 }} />}
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
     </div>
@@ -948,7 +916,7 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
             </div>
           ))}
           {/* Bouton scanner facture */}
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(33,87,255,0.1)", border: `1px solid ${C.blue}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.blue, fontWeight: 700, fontSize: 14 }}>
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,161,0,0.15)", border: `1px solid ${C.orange}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.orange, fontWeight: 700, fontSize: 14 }}>
             {scanning ? "⏳ Analyse en cours..." : "📷 Scanner une facture"}
             <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
               const file = e.target.files[0]; if (!file) return;
