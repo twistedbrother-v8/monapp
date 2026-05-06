@@ -474,10 +474,10 @@ export default function App() {
           <SecoursScreen active={active} setTab={setTab} docs={docs} t={t} />
         )}
         {tab === "cgu" && (
-          <CGUScreen onBack={() => { setShowAbout(false); setTab("accueil"); }} />
+          <CGUScreen onClose={() => setTab("accueil")} />
         )}
         {tab === "confidentialite" && (
-          <CGUScreen onBack={() => { setShowAbout(false); setTab("accueil"); }} showPrivacy={true} />
+          <CGUScreen onClose={() => setTab("accueil")} showPrivacy={true} />
         )}
       </div>
 

@@ -589,101 +589,91 @@ export function ChecklistScreen({ active, checklist, prog, updateCheck, setTab, 
 
 // ─── ASSURANCE SECTION ────────────────────────────────────────────
 function AssuranceSection({ assDocs, docs, setDocs, form, setForm, showAssForm, setShowAssForm, confirmDocId, setConfirmDocId, addDoc, pillColor, pillLabel, callBtn, sCard, sBtn, t }) {
-  const [assOnglet, setAssOnglet] = useState("coordonnees");
-
-  const tabStyle = (on) => ({
-    flex: 1, padding: "8px 0", borderRadius: 16, border: "none",
-    cursor: "pointer", fontSize: 12, fontWeight: 700,
-    background: on ? C.green : C.blue,
-    color: on ? "#000" : "white",
-  });
+  const [showEchForm, setShowEchForm] = useState(false);
 
   return (
     <div>
+      {/* SECTION 1 — Coordonnées */}
+      <div style={{ fontSize: 11, color: C.muted, fontWeight: 800, letterSpacing: 1, marginBottom: 8 }}>📋 COORDONNÉES</div>
       {assDocs.map(d => (
         <div key={d.id} style={sCard()}>
-          {/* Sous-onglets */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-            <button style={tabStyle(assOnglet === "coordonnees")} onClick={() => setAssOnglet("coordonnees")}>📋 Coordonnées</button>
-            <button style={tabStyle(assOnglet === "echeance")} onClick={() => setAssOnglet("echeance")}>📅 Échéance</button>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.blue + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🛡️</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.assurance?.replace("🛡️ ", "") || "Assurance"}</div>
+              {d.org && <div style={{ fontSize: 12, color: "#aaa", marginTop: 3 }}>{d.org}</div>}
+              {d.num && <div style={{ fontSize: 12, color: C.muted }}>N° {d.num}</div>}
+              {d.tel && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>📞 {d.tel}</div>}
+            </div>
+            <button onClick={() => setConfirmDocId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
           </div>
-
-          {assOnglet === "coordonnees" && (
-            <div>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.blue + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🛡️</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.assurance?.replace("🛡️ ", "") || "Assurance"}</div>
-                  {d.org && <div style={{ fontSize: 12, color: C.muted2, marginTop: 3 }}>{d.org}</div>}
-                  {d.num && <div style={{ fontSize: 12, color: C.muted }}>N° {d.num}</div>}
-                  {d.tel && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>📞 {d.tel}</div>}
-                </div>
-                <button onClick={() => setConfirmDocId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
-              </div>
-              {confirmDocId === d.id && (
-                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-                  <button onClick={() => setConfirmDocId(null)} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
-                  <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); setConfirmDocId(null); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🗑️ Supprimer</button>
-                </div>
-              )}
-              {d.tel && callBtn(d.tel, t.appelerAssurance || "Appeler l'assurance")}
+          {confirmDocId === d.id && (
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <button onClick={() => setConfirmDocId(null)} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+              <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); setConfirmDocId(null); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🗑️ Supprimer</button>
             </div>
           )}
+          {d.tel && callBtn(d.tel, t.appelerAssurance || "Appeler l'assurance")}
+        </div>
+      ))}
+      <button style={sBtn(!showAssForm)} onClick={() => setShowAssForm(f => !f)}>
+        {showAssForm ? "✕ Annuler" : assDocs.length > 0 ? "✏️ Modifier les coordonnées" : "➕ Ajouter l'assurance"}
+      </button>
+      {showAssForm && (
+        <div style={sCard({ padding: 20 })}>
+          {[["ORGANISME","text","AXA, MAAF…","assOrg"],["N° CONTRAT","text","123 456 789","assNum"],["TÉLÉPHONE","tel","01 23 45 67 89","assTel"]].map(([label,type,ph,key]) => (
+            <div key={key}><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{label}</div><input type={type} style={input} placeholder={ph} value={form[key] || ""} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} /></div>
+          ))}
+          {assDocs.length === 0 && (
+            <>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>DATE D'ÉCHÉANCE</div>
+              <input type="date" style={input} value={form.assDate || ""} onChange={e => setForm(f => ({ ...f, assDate: e.target.value }))} />
+            </>
+          )}
+          <button style={sBtn(true)} onClick={() => {
+            const existingDate = assDocs[0]?.rawDate || form.assDate;
+            addDoc("assurance", { label: "Assurance", icon: "🛡️", org: form.assOrg, num: form.assNum, tel: form.assTel, date: existingDate });
+            setForm(f => ({ ...f, assOrg: "", assNum: "", assDate: "", assTel: "" }));
+            setShowAssForm(false);
+          }}>{t.enregistrer || "✅ Enregistrer"}</button>
+        </div>
+      )}
 
-          {assOnglet === "echeance" && (
+      {/* SECTION 2 — Échéance */}
+      <div style={{ fontSize: 11, color: C.muted, fontWeight: 800, letterSpacing: 1, marginTop: 16, marginBottom: 8 }}>📅 ÉCHÉANCE</div>
+      {assDocs.length === 0 ? (
+        <div style={sCard({ textAlign: "center", color: C.muted, fontSize: 12, padding: 20 })}>
+          Ajoutez d'abord vos coordonnées d'assurance
+        </div>
+      ) : assDocs.map(d => (
+        <div key={d.id + "_ech"} style={sCard()}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontSize: 12, color: C.muted }}>{t.dateEcheance || "Date d'échéance"}</div>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: pillColor(d.days) }}>{d.date}</div>
-                  <div style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700, marginTop: 2 }}>
-                    {d.days <= 0 ? (t.expireExclam || "Expiré 🔴") : `${t.expireDans || "Expire dans"} ${d.days} ${t.jours || "jours"}`}
-                  </div>
-                </div>
-                <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 700 }}>{pillLabel(d.days)}</span>
+              <div style={{ fontSize: 12, color: C.muted }}>Date d'échéance</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: pillColor(d.days) }}>{d.date}</div>
+              <div style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700, marginTop: 2 }}>
+                {d.days <= 0 ? "Expiré 🔴" : `Expire dans ${d.days} jours`}
               </div>
-              <button style={sBtn(true, C.blue)} onClick={() => setShowAssForm(f => !f)}>
-                {showAssForm ? "✕ Annuler" : "✏️ Modifier la date"}
-              </button>
-              {showAssForm && (
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.dateEcheance || "NOUVELLE DATE D'ÉCHÉANCE"}</div>
-                  <input type="date" style={{ width: "100%", background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "0 14px", height: 44, color: "#fff", fontSize: 14, boxSizing: "border-box", outline: "none", colorScheme: "dark", marginBottom: 10 }} value={form.assDate} onChange={e => setForm(f => ({ ...f, assDate: e.target.value }))} />
-                  <button style={sBtn(!!form.assDate)} onClick={() => {
-                    if (!form.assDate) return;
-                    addDoc("assurance", { label: "Assurance", icon: "🛡️", org: d.org, num: d.num, tel: d.tel, date: form.assDate });
-                    setForm(f => ({ ...f, assDate: "" }));
-                    setShowAssForm(false);
-                  }}>{t.enregistrer || "✅ Enregistrer"}</button>
-                </div>
-              )}
+            </div>
+            <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 700 }}>{pillLabel(d.days)}</span>
+          </div>
+          <button style={sBtn(true, C.blue)} onClick={() => setShowEchForm(f => !f)}>
+            {showEchForm ? "✕ Annuler" : "✏️ Modifier la date"}
+          </button>
+          {showEchForm && (
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>NOUVELLE DATE D'ÉCHÉANCE</div>
+              <input type="date" style={{ width: "100%", background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "0 14px", height: 44, color: "#fff", fontSize: 14, boxSizing: "border-box", outline: "none", colorScheme: "dark", marginBottom: 10 }} value={form.assDate || ""} onChange={e => setForm(f => ({ ...f, assDate: e.target.value }))} />
+              <button style={sBtn(!!form.assDate)} onClick={() => {
+                if (!form.assDate) return;
+                addDoc("assurance", { label: "Assurance", icon: "🛡️", org: d.org, num: d.num, tel: d.tel, date: form.assDate });
+                setForm(f => ({ ...f, assDate: "" }));
+                setShowEchForm(false);
+              }}>{t.enregistrer || "✅ Enregistrer"}</button>
             </div>
           )}
         </div>
       ))}
-
-      {assDocs.length === 0 && (
-        <>
-          <button style={sBtn(!showAssForm)} onClick={() => setShowAssForm(f => !f)}>
-            {showAssForm ? (t.annuler || "✕ Annuler") : (t.ajouterAssurance || "➕ Ajouter l'assurance")}
-          </button>
-          {showAssForm && (
-            <div style={sCard({ padding: 20 })}>
-              {[["ORGANISME","text","AXA, MAAF…","assOrg"],["N° CONTRAT","text","123 456 789","assNum"],["TÉLÉPHONE","tel","01 23 45 67 89","assTel"]].map(([label,type,ph,key]) => (
-                <div key={key}><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{label}</div><input type={type} style={input} placeholder={ph} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} /></div>
-              ))}
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>DATE D'ÉCHÉANCE</div>
-              <input type="date" style={input} value={form.assDate} onChange={e => setForm(f => ({ ...f, assDate: e.target.value }))} />
-              <button style={sBtn(!!form.assDate)} onClick={() => {
-                if (!form.assDate) return;
-                addDoc("assurance", { label: "Assurance", icon: "🛡️", org: form.assOrg, num: form.assNum, tel: form.assTel, date: form.assDate });
-                setForm(f => ({ ...f, assOrg: "", assNum: "", assDate: "", assTel: "" }));
-                setShowAssForm(false);
-              }}>{t.enregistrer || "✅ Enregistrer"}</button>
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }
@@ -745,7 +735,7 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
 
       <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 24, padding: 4, marginBottom: 16, gap: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
         <button style={tabStyle(docTab === "assurance")} onClick={() => setDocTab("assurance")}>{t.assurance || "🛡️ Assurance"}</button>
-        <button style={tabStyle(docTab === "controle")}  onClick={() => setDocTab("controle")}>{t.controleTechnique || "🚗 Contrôle Technique"}</button>
+        <button style={tabStyle(docTab === "controle")}  onClick={() => setDocTab("controle")}>{t.controleTechnique || "🚗 CT"}</button>
         <button style={tabStyle(docTab === "garage")}    onClick={() => setDocTab("garage")}>{t.garage || "🔧 Garage"}</button>
       </div>
 
@@ -868,7 +858,7 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
 
 // ─── DÉPENSES ─────────────────────────────────────────────────────
 export function DepensesScreen({ active, vehicles, setVehicles, setActive, depenses, setDepenses, t = {} }) {
-  const [sousOnglet, setSousOnglet] = useState("general");
+  const [sousOnglet, setSousOnglet] = useState("carburant");
   const [showForm, setShowForm] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
   const [form, setForm] = useState({ date: "", montant: "", categorie: t.catGarage || "Garage", description: "", km: "", prixCarburant: "", litres: "" });
@@ -958,7 +948,7 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
         <div>
           <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{t.ceMoisCi || "CE MOIS-CI"}</div>
           <div style={{ fontSize: 32, fontWeight: 900, color: C.text, marginTop: 2 }}>{totalMois.toFixed(2)} €</div>
-          {kmMois > 0 && <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>🛣️ {kmMois.toLocaleString()} km {t.parcourus || "parcourus ce mois"}</div>}
+          {kmMois > 0 && <div style={{ fontSize: 12, color: C.orange, fontWeight: 700, marginTop: 4 }}>🛣️ {kmMois.toLocaleString()} km {t.parcourus || "parcourus ce mois"}</div>}
           {(() => {
             const litresMois = depCarb.filter(d => d.date?.startsWith(moisActuel) && d.litres).reduce((s, d) => s + parseFloat(d.litres), 0);
             if (litresMois > 0 && kmMois > 0) {
@@ -977,8 +967,8 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
       </div>
 
       <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 24, padding: 4, marginBottom: 16, gap: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
-        <button style={tabStyle(sousOnglet === "general")}   onClick={() => setSousOnglet("general")}>{t.general || "📋 Général"}</button>
         <button style={tabStyle(sousOnglet === "carburant")} onClick={() => setSousOnglet("carburant")}>{t.carburant || "⛽ Carburant"}</button>
+        <button style={tabStyle(sousOnglet === "general")}   onClick={() => setSousOnglet("general")}>{t.general || "📋 Général"}</button>
       </div>
 
       {sousOnglet === "general" && (
@@ -1160,7 +1150,7 @@ function PremiumHistorique({ active, depenses = [] }) {
 
 // ─── HISTORIQUE ───────────────────────────────────────────────────
 export function HistoriqueScreen({ active, vehicles, setActive, depenses = [], t = {}, isUltra = true, onShowPremium }) {
-  const [onglet, setOnglet] = useState("recent");
+  const [onglet, setOnglet] = useState("premium");
 
   const history = [...(active?.history || [])].reverse();
   const historyRecent = history.slice(0, 10);
@@ -1191,10 +1181,10 @@ export function HistoriqueScreen({ active, vehicles, setActive, depenses = [], t
 
       {/* Onglets */}
       <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 24, padding: 4, marginBottom: 16, gap: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
-        <button style={tabStyle(onglet === "recent")} onClick={() => setOnglet("recent")}>🕐 Récent</button>
         <button style={tabStyle(onglet === "premium")} onClick={() => isUltra ? setOnglet("premium") : onShowPremium?.()}>
           {isUltra ? "📊 Dépenses & km" : "🔒 Dépenses & km"}
         </button>
+        <button style={tabStyle(onglet === "recent")} onClick={() => setOnglet("recent")}>🕐 Récent</button>
       </div>
 
       {/* Onglet récent */}
@@ -1399,7 +1389,10 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
 
 // ─── SECOURS ──────────────────────────────────────────────────────
 export function SecoursScreen({ active, setTab, docs, t = {} }) {
-  const [section, setSection] = useState(null);
+  const [section, setSection] = useState(() => sessionStorage.getItem("secours_section") || null);
+
+  const goSection = (s) => { sessionStorage.setItem("secours_section", s || ""); setSection(s); };
+  const goBack = () => { sessionStorage.removeItem("secours_section"); setSection(null); };
 
   const stepStyle = (color) => ({
     display: "flex", alignItems: "flex-start", gap: 12,
@@ -1418,7 +1411,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
 
       {!section && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <button onClick={() => setSection("accident")} style={{ background: C.surface, border: `1px solid ${C.red}44`, borderRadius: 16, padding: "18px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left", width: "100%" }}>
+          <button onClick={() => goSection("accident")} style={{ background: C.surface, border: `1px solid ${C.red}44`, borderRadius: 16, padding: "18px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left", width: "100%" }}>
             <span style={{ fontSize: 32 }}>🚨</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: C.red }}>{t.enCasAccident || "En cas d'accident"}</div>
@@ -1427,7 +1420,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
             <span style={{ color: C.muted, fontSize: 20 }}>›</span>
           </button>
 
-          <button onClick={() => setSection("constat")} style={{ background: C.surface, border: `1px solid ${C.yellow}44`, borderRadius: 16, padding: "18px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left", width: "100%" }}>
+          <button onClick={() => goSection("constat")} style={{ background: C.surface, border: `1px solid ${C.yellow}44`, borderRadius: 16, padding: "18px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left", width: "100%" }}>
             <span style={{ fontSize: 32 }}>📋</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: C.yellow }}>{t.guideConstat || "Guide constat européen"}</div>
@@ -1436,7 +1429,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
             <span style={{ color: C.muted, fontSize: 20 }}>›</span>
           </button>
 
-          <button onClick={() => setSection("services")} style={{ background: C.surface, border: `1px solid ${C.blue}44`, borderRadius: 16, padding: "18px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left", width: "100%" }}>
+          <button onClick={() => goSection("services")} style={{ background: C.surface, border: `1px solid ${C.blue}44`, borderRadius: 16, padding: "18px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, textAlign: "left", width: "100%" }}>
             <span style={{ fontSize: 32 }}>📍</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 800, color: C.blue }}>{t.servicesProches || "Services proches"}</div>
@@ -1449,7 +1442,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
 
       {section === "accident" && (
         <div>
-          <button onClick={() => setSection(null)} style={{ background: C.surface, border: "none", borderRadius: 12, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 13, marginBottom: 16 }}>{t.retour || "← Retour"}</button>
+          <button onClick={goBack} style={{ background: C.surface, border: "none", borderRadius: 12, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 13, marginBottom: 16 }}>{t.retour || "← Retour"}</button>
           <div style={{ fontSize: 16, fontWeight: 800, color: C.red, marginBottom: 14 }}>🚨 {t.procedureAccident || "Procédure accident"}</div>
 
           {[
@@ -1495,7 +1488,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
 
       {section === "constat" && (
         <div>
-          <button onClick={() => setSection(null)} style={{ background: C.surface, border: "none", borderRadius: 12, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 13, marginBottom: 16 }}>{t.retour || "← Retour"}</button>
+          <button onClick={goBack} style={{ background: C.surface, border: "none", borderRadius: 12, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 13, marginBottom: 16 }}>{t.retour || "← Retour"}</button>
           <div style={{ fontSize: 16, fontWeight: 800, color: C.yellow, marginBottom: 14 }}>{t.guideConstatTitle || "📋 Guide constat européen"}</div>
 
           {[
@@ -1522,21 +1515,24 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
 
       {section === "services" && (
         <div>
-          <button onClick={() => setSection(null)} style={{ background: C.surface, border: "none", borderRadius: 12, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 13, marginBottom: 16 }}>{t.retour || "← Retour"}</button>
+          <button onClick={goBack} style={{ background: C.surface, border: "none", borderRadius: 12, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 13, marginBottom: 16 }}>{t.retour || "← Retour"}</button>
           <div style={{ fontSize: 16, fontWeight: 800, color: C.blue, marginBottom: 14 }}>{t.servicesProchesTitle || "📍 Services proches"}</div>
 
           {[
-            { icon: "🔧", label: t.garageDépannage || "Garage / Dépannage", query: "garage+dépannage", color: C.orange },
-            { icon: "⛽", label: t.stationService || "Station service",      query: "station+service",  color: C.yellow },
+            { icon: "🔧", label: t.garageDépannage || "Garage / Dépannage", query: "garage dépannage", color: C.orange },
+            { icon: "⛽", label: t.stationService || "Station service",      query: "station service",  color: C.yellow },
           ].map(({ icon, label, query, color }) => (
             <button key={query} onClick={() => {
               if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                  pos => window.open(`https://www.google.com/maps/search/${query}/@${pos.coords.latitude},${pos.coords.longitude},14z`, "_blank"),
-                  () => window.open(`https://www.google.com/maps/search/${query}`, "_blank")
+                  pos => {
+                    const url = `geo:${pos.coords.latitude},${pos.coords.longitude}?q=${encodeURIComponent(query)}`;
+                    window.location.href = url;
+                  },
+                  () => { window.location.href = `geo:0,0?q=${encodeURIComponent(query)}`; }
                 );
               } else {
-                window.open(`https://www.google.com/maps/search/${query}`, "_blank");
+                window.location.href = `geo:0,0?q=${encodeURIComponent(query)}`;
               }
             }} style={{ background: C.surface, border: `1px solid ${color}33`, borderRadius: 16, padding: "16px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, width: "100%", marginBottom: 10, textAlign: "left" }}>
               <div style={{ width: 46, height: 46, borderRadius: 14, background: color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{icon}</div>
