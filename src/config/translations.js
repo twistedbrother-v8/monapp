@@ -12,7 +12,7 @@ export const translations = {
     // Navigation
     accueil: "Accueil",
     checklist: "Checklist",
-    documents: "Documents",
+    documents: "Dossiers",
     depenses: "Dépenses",
     historique: "Historique",
     rapport: "Rapport",
@@ -209,7 +209,7 @@ export const translations = {
     // Navigation
     accueil: "Home",
     checklist: "Checklist",
-    documents: "Documents",
+    documents: "Files",
     depenses: "Expenses",
     historique: "History",
     rapport: "Report",

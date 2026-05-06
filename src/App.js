@@ -30,7 +30,7 @@ import "./App.css";
 const TABS = [
   { id: "accueil",    label: "Accueil",    icon: "🏠" },
   { id: "checklist",  label: "Checklist",  icon: "✅" },
-  { id: "documents",  label: "Documents",  icon: "📄" },
+  { id: "documents",  label: "Dossiers",   icon: "📄" },
   { id: "depenses",   label: "Dépenses",   icon: "💰" },
   { id: "historique", label: "Historique", icon: "🕐" },
   { id: "rapport",    label: "Rapport",    icon: "📊" },
@@ -92,7 +92,7 @@ export default function App() {
     if (userId) save("lang", newLang);
   };
 
-  const garageInfo = active?.garage || { nom: "", tel: "" };
+  const garageInfo = active?.garage || { nom: "", tel: "", adresse: "" };
 
   useEffect(() => {
     if (!userId) return;

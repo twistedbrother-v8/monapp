@@ -164,7 +164,7 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
           <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(180deg, #1a1a2e, #000)", fontSize: 80 }}>{TYPE_ICONS[active.type]}</div>
         )}
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(transparent, #000)" }} />
-        <label style={{ position: "absolute", bottom: 10, right: 10, zIndex: 2, background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "5px 10px", color: "white", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+        <label style={{ position: "absolute", bottom: 10, right: 10, zIndex: 2, background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "4px 8px", color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
           📷 {active.photo ? "Changer" : "Photo"}
           <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => {
             const file = e.target.files[0]; if (!file) return;
@@ -190,11 +190,10 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
         {active.photo && (
           <button onClick={e => {
             e.preventDefault(); e.stopPropagation();
-            
             const updated = vehicles.map(v => v.id === active.id ? { ...v, photo: null } : v);
             setVehicles(updated); setActive(updated.find(v => v.id === active.id));
             localStorage.removeItem("photo_" + active.id);
-          }} style={{ position: "absolute", top: 10, right: 10, zIndex: 10, background: "rgba(252,63,53,0.85)", border: "none", borderRadius: 8, padding: "4px 8px", color: "white", fontSize: 11, cursor: "pointer" }}>✕</button>
+          }} style={{ position: "absolute", top: 8, right: 8, zIndex: 10, background: "rgba(0,0,0,0.4)", border: "none", borderRadius: 6, padding: "2px 6px", color: "rgba(255,255,255,0.4)", fontSize: 10, cursor: "pointer" }}>✕</button>
         )}
         <div style={{ position: "absolute", bottom: 10, left: 14, zIndex: 2 }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: "white" }}>{active.name}</div>
@@ -588,17 +587,119 @@ export function ChecklistScreen({ active, checklist, prog, updateCheck, setTab, 
   );
 }
 
+// ─── ASSURANCE SECTION ────────────────────────────────────────────
+function AssuranceSection({ assDocs, docs, setDocs, form, setForm, showAssForm, setShowAssForm, confirmDocId, setConfirmDocId, addDoc, pillColor, pillLabel, callBtn, sCard, sBtn, t }) {
+  const [assOnglet, setAssOnglet] = useState("coordonnees");
+
+  const tabStyle = (on) => ({
+    flex: 1, padding: "8px 0", borderRadius: 16, border: "none",
+    cursor: "pointer", fontSize: 12, fontWeight: 700,
+    background: on ? C.green : C.blue,
+    color: on ? "#000" : "white",
+  });
+
+  return (
+    <div>
+      {assDocs.map(d => (
+        <div key={d.id} style={sCard()}>
+          {/* Sous-onglets */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            <button style={tabStyle(assOnglet === "coordonnees")} onClick={() => setAssOnglet("coordonnees")}>📋 Coordonnées</button>
+            <button style={tabStyle(assOnglet === "echeance")} onClick={() => setAssOnglet("echeance")}>📅 Échéance</button>
+          </div>
+
+          {assOnglet === "coordonnees" && (
+            <div>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.blue + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🛡️</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.assurance?.replace("🛡️ ", "") || "Assurance"}</div>
+                  {d.org && <div style={{ fontSize: 12, color: C.muted2, marginTop: 3 }}>{d.org}</div>}
+                  {d.num && <div style={{ fontSize: 12, color: C.muted }}>N° {d.num}</div>}
+                  {d.tel && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>📞 {d.tel}</div>}
+                </div>
+                <button onClick={() => setConfirmDocId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
+              </div>
+              {confirmDocId === d.id && (
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <button onClick={() => setConfirmDocId(null)} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+                  <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); setConfirmDocId(null); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🗑️ Supprimer</button>
+                </div>
+              )}
+              {d.tel && callBtn(d.tel, t.appelerAssurance || "Appeler l'assurance")}
+            </div>
+          )}
+
+          {assOnglet === "echeance" && (
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: C.muted }}>{t.dateEcheance || "Date d'échéance"}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: pillColor(d.days) }}>{d.date}</div>
+                  <div style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700, marginTop: 2 }}>
+                    {d.days <= 0 ? (t.expireExclam || "Expiré 🔴") : `${t.expireDans || "Expire dans"} ${d.days} ${t.jours || "jours"}`}
+                  </div>
+                </div>
+                <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 700 }}>{pillLabel(d.days)}</span>
+              </div>
+              <button style={sBtn(true, C.blue)} onClick={() => setShowAssForm(f => !f)}>
+                {showAssForm ? "✕ Annuler" : "✏️ Modifier la date"}
+              </button>
+              {showAssForm && (
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.dateEcheance || "NOUVELLE DATE D'ÉCHÉANCE"}</div>
+                  <input type="date" style={{ width: "100%", background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, padding: "0 14px", height: 44, color: "#fff", fontSize: 14, boxSizing: "border-box", outline: "none", colorScheme: "dark", marginBottom: 10 }} value={form.assDate} onChange={e => setForm(f => ({ ...f, assDate: e.target.value }))} />
+                  <button style={sBtn(!!form.assDate)} onClick={() => {
+                    if (!form.assDate) return;
+                    addDoc("assurance", { label: "Assurance", icon: "🛡️", org: d.org, num: d.num, tel: d.tel, date: form.assDate });
+                    setForm(f => ({ ...f, assDate: "" }));
+                    setShowAssForm(false);
+                  }}>{t.enregistrer || "✅ Enregistrer"}</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {assDocs.length === 0 && (
+        <>
+          <button style={sBtn(!showAssForm)} onClick={() => setShowAssForm(f => !f)}>
+            {showAssForm ? (t.annuler || "✕ Annuler") : (t.ajouterAssurance || "➕ Ajouter l'assurance")}
+          </button>
+          {showAssForm && (
+            <div style={sCard({ padding: 20 })}>
+              {[["ORGANISME","text","AXA, MAAF…","assOrg"],["N° CONTRAT","text","123 456 789","assNum"],["TÉLÉPHONE","tel","01 23 45 67 89","assTel"]].map(([label,type,ph,key]) => (
+                <div key={key}><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{label}</div><input type={type} style={input} placeholder={ph} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} /></div>
+              ))}
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>DATE D'ÉCHÉANCE</div>
+              <input type="date" style={input} value={form.assDate} onChange={e => setForm(f => ({ ...f, assDate: e.target.value }))} />
+              <button style={sBtn(!!form.assDate)} onClick={() => {
+                if (!form.assDate) return;
+                addDoc("assurance", { label: "Assurance", icon: "🛡️", org: form.assOrg, num: form.assNum, tel: form.assTel, date: form.assDate });
+                setForm(f => ({ ...f, assOrg: "", assNum: "", assDate: "", assTel: "" }));
+                setShowAssForm(false);
+              }}>{t.enregistrer || "✅ Enregistrer"}</button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── DOCUMENTS ────────────────────────────────────────────────────
 export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab, docs, setDocs, localInvoices, setLocalInvoices, garageInfo, onSaveGarage, t = {} }) {
-  const [form, setForm] = useState({ assOrg: "", assNum: "", assDate: "", assTel: "", ctDate: "", garNom: garageInfo?.nom || "", garTel: garageInfo?.tel || "", garRevDate: "" });
+  const [form, setForm] = useState({ assOrg: "", assNum: "", assDate: "", assTel: "", ctDate: "", garNom: garageInfo?.nom || "", garTel: garageInfo?.tel || "", garAdresse: garageInfo?.adresse || "", garRevDate: "" });
   const [garageSaved, setGarageSaved] = useState(false);
   const [showAssForm, setShowAssForm] = useState(false);
   const [showCtForm,  setShowCtForm]  = useState(false);
   const [showGarForm, setShowGarForm] = useState(false);
   const [showRevForm, setShowRevForm] = useState(false);
+  const [confirmDocId, setConfirmDocId] = useState(null);
 
   React.useEffect(() => {
-    setForm(f => ({ ...f, garNom: garageInfo?.nom || "", garTel: garageInfo?.tel || "" }));
+    setForm(f => ({ ...f, garNom: garageInfo?.nom || "", garTel: garageInfo?.tel || "", garAdresse: garageInfo?.adresse || "" }));
   }, [garageInfo]);
 
   const myDocs  = docs.filter(d => !active || d.vehicleId === active?.id);
@@ -649,64 +750,33 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
       </div>
 
       {docTab === "assurance" && (
-        <div>
-          {assDocs.map(d => (
-            <div key={d.id} style={sCard()}>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.blue + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🛡️</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.assurance?.replace("🛡️ ", "") || "Assurance"}</div>
-                    <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{pillLabel(d.days)}</span>
-                  </div>
-                  {d.org && <div style={{ fontSize: 12, color: C.muted2, marginTop: 3 }}>{d.org}</div>}
-                  {d.num && <div style={{ fontSize: 12, color: C.muted }}>N° {d.num}</div>}
-                  {d.tel && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>📞 {d.tel}</div>}
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                    <span style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700 }}>{d.days <= 0 ? (t.expireExclam || "Expiré 🔴") : `${t.expireDans || "Expire dans"} ${d.days} ${t.jours || "jours"}`}</span>
-                    <span style={{ fontSize: 12, color: C.muted }}>{d.date}</span>
-                  </div>
-                </div>
-                <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
-              </div>
-              {d.tel && callBtn(d.tel, t.appelerAssurance || "Appeler l'assurance")}
-            </div>
-          ))}
-          <button style={sBtn(!showAssForm)} onClick={() => setShowAssForm(f => !f)}>{showAssForm ? (t.annuler || "✕ Annuler") : assDocs.length > 0 ? (t.modifierAssurance || "✏️ Modifier l'assurance") : (t.ajouterAssurance || "➕ Ajouter l'assurance")}</button>
-          {showAssForm && (
-            <div style={sCard({ padding: 20 })}>
-              {[[t.organisme || "ORGANISME","text","AXA, MAAF…","assOrg"],[t.contrat || "N° CONTRAT","text","123 456 789","assNum"],[t.telephone || "TÉLÉPHONE","tel","01 23 45 67 89","assTel"]].map(([label,type,ph,key]) => (
-                <div key={key}><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{label}</div><input type={type} style={input} placeholder={ph} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} /></div>
-              ))}
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.dateEcheance || "DATE D'ÉCHÉANCE"}</div>
-              <input type="date" style={input} value={form.assDate} onChange={e => setForm(f => ({ ...f, assDate: e.target.value }))} />
-              <button style={sBtn(!!form.assDate)} onClick={() => {
-                if (!form.assDate) return;
-                addDoc("assurance", { label: "Assurance", icon: "🛡️", org: form.assOrg, num: form.assNum, tel: form.assTel, date: form.assDate });
-                setForm(f => ({ ...f, assOrg: "", assNum: "", assDate: "", assTel: "" }));
-                setShowAssForm(false);
-              }}>{t.enregistrer || "✅ Enregistrer"}</button>
-            </div>
-          )}
-        </div>
+        <AssuranceSection
+          assDocs={assDocs} docs={docs} setDocs={setDocs}
+          form={form} setForm={setForm}
+          showAssForm={showAssForm} setShowAssForm={setShowAssForm}
+          confirmDocId={confirmDocId} setConfirmDocId={setConfirmDocId}
+          addDoc={addDoc} pillColor={pillColor} pillLabel={pillLabel}
+          callBtn={callBtn} sCard={sCard} sBtn={sBtn} t={t}
+        />
       )}
 
       {docTab === "controle" && (
         <div>
           {ctDocs.map(d => (
-            <div key={d.id} style={sCard({ display: "flex", alignItems: "flex-start", gap: 14 })}>
-              <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.purple + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🚗</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.controleTechnique?.replace("🚗 ", "") || "Contrôle technique"}</div>
-                  <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{pillLabel(d.days)}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                  <span style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700 }}>{d.days <= 0 ? (t.expireExclam || "Expiré 🔴") : `${t.expireDans || "Expire dans"} ${d.days} ${t.jours || "jours"}`}</span>
-                  <span style={{ fontSize: 12, color: C.muted }}>{d.date}</span>
+            <div key={d.id}>
+              <div style={sCard({ display: "flex", alignItems: "flex-start", gap: 14 })}>
+                <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.purple + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🚗</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.controleTechnique?.replace("🚗 ", "") || "Contrôle technique"}</div>
+                    <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{pillLabel(d.days)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                    <span style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700 }}>{d.days <= 0 ? (t.expireExclam || "Expiré 🔴") : `${t.expireDans || "Expire dans"} ${d.days} ${t.jours || "jours"}`}</span>
+                    <span style={{ fontSize: 12, color: C.muted }}>{d.date}</span>
+                  </div>
                 </div>
               </div>
-              <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
             </div>
           ))}
           <button style={sBtn(!showCtForm)} onClick={() => setShowCtForm(f => !f)}>{showCtForm ? (t.annuler || "✕ Annuler") : ctDocs.length > 0 ? (t.modifierControle || "✏️ Modifier le contrôle") : (t.ajouterControle || "➕ Ajouter le contrôle technique")}</button>
@@ -730,35 +800,49 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{garageInfo.nom}</div>
                   {garageInfo.tel && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>📞 {garageInfo.tel}</div>}
+                  {garageInfo.adresse && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>📍 {garageInfo.adresse}</div>}
                 </div>
               </div>
               {garageInfo.tel && callBtn(garageInfo.tel, t.appelerGarage || "Appeler le garage")}
+              {garageInfo.adresse && (
+                <a href={`https://www.google.com/maps/search/${encodeURIComponent(garageInfo.adresse)}`} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: C.blue + "22", border: `1px solid ${C.blue}44`, borderRadius: 12, padding: "11px 14px", marginTop: 8, color: C.blue, textDecoration: "none", fontSize: 14, fontWeight: 700 }}>
+                  📍 Voir sur Google Maps
+                </a>
+              )}
             </div>
           )}
           <button style={sBtn(!showGarForm)} onClick={() => setShowGarForm(f => !f)}>{showGarForm ? (t.annuler || "✕ Annuler") : garageInfo?.nom ? (t.modifierGarage || "✏️ Modifier le garage") : (t.ajouterGarage || "➕ Ajouter le garage")}</button>
           {showGarForm && (
             <div style={sCard({ padding: 20 })}>
-              {[[t.nomGarage || "NOM DU GARAGE","text","Garage Dupont…","garNom"],[t.telephone || "TÉLÉPHONE","tel","01 23 45 67 89","garTel"]].map(([label,type,ph,key]) => (
-                <div key={key}><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{label}</div><input type={type} style={input} placeholder={ph} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} /></div>
+              {[[t.nomGarage || "NOM DU GARAGE","text","Garage Dupont…","garNom"],[t.telephone || "TÉLÉPHONE","tel","01 23 45 67 89","garTel"],[t.adresse || "ADRESSE","text","12 rue de la Paix, Paris","garAdresse"]].map(([label,type,ph,key]) => (
+                <div key={key}><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{label}</div><input type={type} style={input} placeholder={ph} value={form[key] || ""} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} /></div>
               ))}
-              <button style={sBtn(form.garNom.trim().length > 0, garageSaved ? C.green : C.blue)} onClick={() => { if (!form.garNom.trim()) return; onSaveGarage({ nom: form.garNom, tel: form.garTel }); setGarageSaved(true); setShowGarForm(false); setTimeout(() => setGarageSaved(false), 2000); }}>{garageSaved ? (t.enregistre || "✅ Enregistré !") : (t.enregistrerInfos || "💾 Enregistrer les infos")}</button>
+              <button style={sBtn(form.garNom.trim().length > 0, garageSaved ? C.green : C.blue)} onClick={() => { if (!form.garNom.trim()) return; onSaveGarage({ nom: form.garNom, tel: form.garTel, adresse: form.garAdresse }); setGarageSaved(true); setShowGarForm(false); setTimeout(() => setGarageSaved(false), 2000); }}>{garageSaved ? (t.enregistre || "✅ Enregistré !") : (t.enregistrerInfos || "💾 Enregistrer les infos")}</button>
             </div>
           )}
 
           {myDocs.filter(d => d.type === "revision").map(d => (
-            <div key={d.id} style={sCard({ display: "flex", alignItems: "flex-start", gap: 14 })}>
-              <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.orange + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🔩</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.revision || "Révision"}</div>
-                  <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{pillLabel(d.days)}</span>
+            <div key={d.id}>
+              <div style={sCard({ display: "flex", alignItems: "flex-start", gap: 14 })}>
+                <div style={{ width: 46, height: 46, borderRadius: 14, flexShrink: 0, background: C.orange + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>🔩</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: C.text }}>{t.revision || "Révision"}</div>
+                    <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{pillLabel(d.days)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                    <span style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700 }}>{d.days <= 0 ? (t.depasse || "Dépassée !") : `${t.dans || "Dans"} ${d.days} ${t.jours || "jours"}`}</span>
+                    <span style={{ fontSize: 12, color: C.muted }}>{d.date}</span>
+                  </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                  <span style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700 }}>{d.days <= 0 ? (t.depasse || "Dépassée !") : `${t.dans || "Dans"} ${d.days} ${t.jours || "jours"}`}</span>
-                  <span style={{ fontSize: 12, color: C.muted }}>{d.date}</span>
-                </div>
+                <button onClick={() => setConfirmDocId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
               </div>
-              <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); }} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
+              {confirmDocId === d.id && (
+                <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                  <button onClick={() => setConfirmDocId(null)} style={{ flex: 1, background: C.surface2, border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+                  <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); setConfirmDocId(null); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🗑️ Supprimer</button>
+                </div>
+              )}
             </div>
           ))}
           <button style={sBtn(!showRevForm)} onClick={() => setShowRevForm(f => !f)}>{showRevForm ? (t.annuler || "✕ Annuler") : myDocs.filter(d => d.type === "revision").length > 0 ? (t.modifierRevision || "✏️ Modifier la révision") : (t.ajouterRevision || "➕ Ajouter une révision")}</button>
