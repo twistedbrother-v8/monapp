@@ -56,6 +56,14 @@ export default function App() {
   const [active,        setActive]        = useState(null);
   const { loadVehicles } = useVehicleManager(userId, load, save);
   const contentRef = React.useRef(null);
+  const [deferredInstall, setDeferredInstall] = React.useState(null);
+  const [notifStatus, setNotifStatus] = React.useState(Notification?.permission ?? "default");
+
+  React.useEffect(() => {
+    const handler = (e) => { e.preventDefault(); setDeferredInstall(e); };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   const setTab = useCallback((newTab) => {
     if (contentRef.current) contentRef.current.scrollTop = 0;
@@ -183,6 +191,7 @@ export default function App() {
   const PLAN = "ultra"; // "free" | "premium" | "ultra" — changer pour verrouiller
   const isPremium = PLAN === "premium" || PLAN === "ultra";
   const isUltra = PLAN === "ultra";
+  const maxVehicles = PLAN === "free" ? 1 : PLAN === "premium" ? 3 : Infinity;
 
   const checklist  = active ? (getChecklist(active.type, lang) || []) : [];
   const prog       = getProgress(active, lang);
@@ -191,6 +200,7 @@ export default function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showPremium, setShowPremium] = useState(false);
   const [showTuto, setShowTuto] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   useEffect(() => {
     if (user && !localStorage.getItem("tuto_seen")) {
@@ -222,6 +232,7 @@ export default function App() {
   };
   const addVehicle = useCallback(() => {
     if (!name.trim()) return;
+    if (vehicles.length >= maxVehicles) { setShowPremium(true); return; }
     const v = { id: Date.now(), name: name.trim(), immat: immat.trim().toUpperCase(), type, history: [], checks: {}, garage: { nom: "", tel: "" } };
     setVehicles(prev => [...prev, v]);
     setActive(v);
@@ -359,6 +370,32 @@ export default function App() {
                 {isPremium ? "👨‍👩‍👧 Famille" : "🔒 Famille"}
               </button>
             </div>
+            {/* PWA install — Ultra only */}
+            {isUltra && deferredInstall && (
+              <button onClick={() => { deferredInstall.prompt(); deferredInstall.userChoice.then(() => setDeferredInstall(null)); }} style={{ width: "100%", background: "rgba(33,87,255,0.1)", border: "1px solid rgba(33,87,255,0.3)", borderRadius: 12, padding: 14, color: C.blue, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                📲 Installer l'app sur le téléphone
+              </button>
+            )}
+            {!isUltra && (
+              <button onClick={() => { setShowPremium(true); setShowAbout(false); }} style={{ width: "100%", background: "rgba(191,90,242,0.1)", border: "1px solid rgba(191,90,242,0.3)", borderRadius: 12, padding: 14, color: "#bf5af2", cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                💎 Installer l'app (Ultra)
+              </button>
+            )}
+
+            {/* Notifications push — Ultra only */}
+            {isUltra ? (
+              <button onClick={() => {
+                if (!("Notification" in window)) return;
+                Notification.requestPermission().then(p => setNotifStatus(p));
+              }} style={{ width: "100%", background: "rgba(33,87,255,0.08)", border: "1px solid rgba(33,87,255,0.2)", borderRadius: 12, padding: 14, color: notifStatus === "granted" ? "#89fc68" : C.blue, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                {notifStatus === "granted" ? "🔔 Notifications activées ✓" : "🔔 Activer les notifications"}
+              </button>
+            ) : (
+              <button onClick={() => { setShowPremium(true); setShowAbout(false); }} style={{ width: "100%", background: "rgba(191,90,242,0.08)", border: "1px solid rgba(191,90,242,0.2)", borderRadius: 12, padding: 14, color: "#bf5af2", cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+                💎 Notifications push (Ultra)
+              </button>
+            )}
+
             {!showDeleteConfirm ? (
               <button onClick={() => setShowDeleteConfirm(true)} style={{ width: "100%", background: "rgba(252,63,53,0.1)", border: "1px solid rgba(252,63,53,0.3)", borderRadius: 12, padding: 14, color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
                 {t.supprimerCompte || "🗑️ Supprimer mon compte"}
@@ -383,6 +420,19 @@ export default function App() {
                 </div>
               </div>
             )}
+            <button onClick={() => {
+              const shareData = { title: "CHECKAR", text: "L'appli carnet d'entretien pour ton véhicule 🚗", url: window.location.origin };
+              if (navigator.share) {
+                navigator.share(shareData);
+              } else {
+                navigator.clipboard.writeText(window.location.origin).then(() => {
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2000);
+                });
+              }
+            }} style={{ width: "100%", background: "rgba(33,87,255,0.1)", border: "1px solid rgba(33,87,255,0.3)", borderRadius: 12, padding: 14, color: C.blue, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
+              {shareCopied ? "✅ Lien copié !" : "🔗 Partager l'app"}
+            </button>
             <button onClick={() => { setShowAbout(false); setTab("cgu"); }} style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, color: C.muted, cursor: "pointer", fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
               📄 CGU & Politique de confidentialité
             </button>
@@ -447,6 +497,7 @@ export default function App() {
             type={type} setType={setType} addVehicle={addVehicle} deleteVehicle={deleteVehicle}
             leaveSharedVehicle={leaveSharedVehicle}
             docs={docs} prog={prog} t={t}
+            isPremium={isPremium} maxVehicles={maxVehicles} onShowPremium={() => setShowPremium(true)}
           />
         )}
         {tab === "checklist" && (
@@ -462,13 +513,13 @@ export default function App() {
           />
         )}
         {tab === "depenses" && (
-          <DepensesScreen active={active} vehicles={allVehicles} setVehicles={setVehicles} setActive={setActive} depenses={depenses} setDepenses={setDepenses} t={t} />
+          <DepensesScreen active={active} vehicles={allVehicles} setVehicles={setVehicles} setActive={setActive} depenses={depenses} setDepenses={setDepenses} t={t} isPremium={isPremium} isUltra={isUltra} onShowPremium={() => setShowPremium(true)} />
         )}
         {tab === "historique" && (
-          <HistoriqueScreen active={active} vehicles={allVehicles} setActive={setActive} depenses={depenses} t={t} isUltra={isUltra} onShowPremium={() => setShowPremium(true)} />
+          <HistoriqueScreen active={active} vehicles={allVehicles} setActive={setActive} depenses={depenses} t={t} isPremium={isPremium} isUltra={isUltra} onShowPremium={() => setShowPremium(true)} />
         )}
         {tab === "rapport" && (
-          <RapportScreen active={active} checklist={checklist} prog={prog} docs={docs} exportPDF={exportPDF} localInvoices={localInvoices} depenses={depenses} t={t} />
+          <RapportScreen active={active} checklist={checklist} prog={prog} docs={docs} exportPDF={exportPDF} localInvoices={localInvoices} depenses={depenses} t={t} isPremium={isPremium} onShowPremium={() => setShowPremium(true)} />
         )}
         {tab === "secours" && (
           <SecoursScreen active={active} setTab={setTab} docs={docs} t={t} />

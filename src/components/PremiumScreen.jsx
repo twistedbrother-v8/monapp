@@ -1,5 +1,5 @@
 // src/components/PremiumScreen.jsx
-import React, { useState } from "react";
+import React from "react";
 
 const C = {
   bg:      "#000000",
@@ -28,9 +28,9 @@ export default function PremiumScreen({ onClose, t = {} }) {
         "1 véhicule",
         "Checklist complète",
         "Documents & rappels",
-        "Dépenses & km — 3 mois",
-        "Historique — 3 mois",
-        "Bouton secours",
+        "Bouton secours 🆘",
+        "Dépenses — mois en cours",
+        "Statistiques — mois en cours",
       ],
     },
     {
@@ -42,13 +42,13 @@ export default function PremiumScreen({ onClose, t = {} }) {
       popular: true,
       features: [
         "Jusqu'à 3 véhicules",
-        "Multilingue FR/EN",
-        "PWA installable",
+        "Multilingue FR/EN (auto) 🌍",
         "Diagnostic voyants IA 🔍",
-        "Dépenses & km — 1 an",
-        "Historique — 1 an",
-        "Partage familial 👨‍👩‍👧",
+        "Dépenses & km — 3 mois",
+        "Historique — 3 mois",
+        "Partage familial par code 👨‍👩‍👧",
         "Export PDF 📄",
+        "Statistiques — 3 mois",
       ],
     },
     {
@@ -60,12 +60,14 @@ export default function PremiumScreen({ onClose, t = {} }) {
       features: [
         "Véhicules illimités",
         "Tout du Premium +",
+        "PWA installable 📲",
+        "Notifications push 🔔",
         "Dépenses & km illimité",
         "Historique illimité",
         "Export PDF + Scanner OCR 📷",
-        "Notifications push 🔔",
         "Bons plans garages 🏪",
-        "Support prioritaire ⚡",
+        "Support prioritaire ⚡ (24h)",
+        "Statistiques — 1 an",
       ],
     },
   ];
@@ -77,7 +79,6 @@ export default function PremiumScreen({ onClose, t = {} }) {
       fontFamily: "-apple-system, 'SF Pro Display', sans-serif",
       color: C.text, maxWidth: 430, margin: "0 auto",
     }}>
-      {/* Header */}
       <div style={{ padding: "20px 20px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 900, color: C.text }}>Choisir un plan</div>
@@ -86,11 +87,10 @@ export default function PremiumScreen({ onClose, t = {} }) {
         <button onClick={onClose} style={{ background: C.surface2, border: "none", borderRadius: 10, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 14, fontWeight: 700 }}>✕</button>
       </div>
 
-      {/* Plans */}
       <div style={{ padding: "16px 20px 40px", display: "flex", flexDirection: "column", gap: 14 }}>
         {plans.map(plan => (
           <div key={plan.id} style={{
-            background: plan.popular ? `linear-gradient(135deg, ${C.blue}22, ${C.blue}11)` : C.surface,
+            background: plan.popular ? `linear-gradient(135deg, ${C.blue}22, ${C.blue}11)` : plan.id === "ultra" ? `linear-gradient(135deg, ${C.purple}18, ${C.purple}08)` : C.surface,
             border: `2px solid ${plan.popular ? C.blue : plan.id === "ultra" ? C.purple : "rgba(255,255,255,0.06)"}`,
             borderRadius: 20, padding: 20, position: "relative",
           }}>
@@ -99,7 +99,6 @@ export default function PremiumScreen({ onClose, t = {} }) {
                 ⭐ LE PLUS POPULAIRE
               </div>
             )}
-
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
               <div>
                 <div style={{ fontSize: 11, color: plan.color, fontWeight: 800, letterSpacing: 1, marginBottom: 4 }}>{plan.emoji} {plan.name.toUpperCase()}</div>
@@ -114,7 +113,6 @@ export default function PremiumScreen({ onClose, t = {} }) {
                 )}
               </div>
             </div>
-
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
               {plan.features.map((f, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -123,7 +121,6 @@ export default function PremiumScreen({ onClose, t = {} }) {
                 </div>
               ))}
             </div>
-
             {plan.id !== "free" && (
               <button style={{
                 width: "100%", border: "none", borderRadius: 14, padding: "14px 0",
@@ -135,23 +132,18 @@ export default function PremiumScreen({ onClose, t = {} }) {
                 {plan.id === "premium" ? "Passer Premium 🔒" : "Passer Ultra Premium 💎"}
               </button>
             )}
-
             {plan.id === "free" && (
-              <div style={{ textAlign: "center", fontSize: 12, color: C.muted, padding: "10px 0" }}>
-                Votre plan actuel
-              </div>
+              <div style={{ textAlign: "center", fontSize: 12, color: C.muted, padding: "10px 0" }}>Votre plan actuel</div>
             )}
           </div>
         ))}
 
-        {/* Note support prioritaire */}
         <div style={{ background: C.surface, borderRadius: 16, padding: 16, border: `1px solid ${C.purple}33` }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: C.purple, marginBottom: 6 }}>⚡ Support prioritaire Ultra Premium</div>
           <div style={{ fontSize: 12, color: C.muted, lineHeight: 1.6 }}>
             Réponse garantie sous 24h par email. Nos équipes traitent vos demandes en priorité absolue.
           </div>
         </div>
-
         <div style={{ textAlign: "center", fontSize: 11, color: C.muted, lineHeight: 1.6 }}>
           Paiement sécurisé · Sans engagement · Résiliable à tout moment
         </div>

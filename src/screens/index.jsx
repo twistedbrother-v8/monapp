@@ -67,7 +67,7 @@ function VehicleChip({ v, active, setActive }) {
 }
 
 // ─── ACCUEIL ──────────────────────────────────────────────────────
-export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab, name, setName, immat, setImmat, type, setType, addVehicle, deleteVehicle, leaveSharedVehicle, docs, prog, t = {} }) {
+export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab, name, setName, immat, setImmat, type, setType, addVehicle, deleteVehicle, leaveSharedVehicle, docs, prog, t = {}, isPremium = true, maxVehicles = Infinity, onShowPremium }) {
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState("");
   const [editImmat, setEditImmat] = useState("");
@@ -154,7 +154,9 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
     <div style={{ background: C.bg, minHeight: "100vh" }}>
       <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: "10px 16px 0" }}>
         {vehicles.map(v => <VehicleChip key={v.id} v={v} active={active} setActive={setActive} />)}
-        <button onClick={() => setActive(null)} style={{ flexShrink: 0, borderRadius: 20, padding: "7px 14px", fontSize: 12, cursor: "pointer", border: `1px solid ${C.border}`, background: "transparent", color: C.blue, fontWeight: 600 }}>+ Nouveau</button>
+        <button onClick={() => vehicles.length >= maxVehicles ? onShowPremium?.() : setActive(null)} style={{ flexShrink: 0, borderRadius: 20, padding: "7px 14px", fontSize: 12, cursor: "pointer", border: `1px solid ${vehicles.length >= maxVehicles ? C.purple + "88" : C.border}`, background: "transparent", color: vehicles.length >= maxVehicles ? C.purple : C.blue, fontWeight: 600 }}>
+          {vehicles.length >= maxVehicles ? "🔒 Nouveau" : "+ Nouveau"}
+        </button>
       </div>
 
       <div style={{ margin: "12px 16px 0", borderRadius: 20, overflow: "hidden", height: 180, position: "relative", background: "#111" }}>
@@ -892,7 +894,7 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
 }
 
 // ─── DÉPENSES ─────────────────────────────────────────────────────
-export function DepensesScreen({ active, vehicles, setVehicles, setActive, depenses, setDepenses, t = {} }) {
+export function DepensesScreen({ active, vehicles, setVehicles, setActive, depenses, setDepenses, t = {}, isPremium = true, isUltra = true, onShowPremium }) {
   const [sousOnglet, setSousOnglet] = useState("carburant");
   const [showForm, setShowForm] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
@@ -1004,7 +1006,10 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
       <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 24, padding: 4, marginBottom: 16, gap: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
         <button style={tabStyle(sousOnglet === "carburant")} onClick={() => setSousOnglet("carburant")}>{t.carburant || "⛽ Carburant"}</button>
         <button style={tabStyle(sousOnglet === "general")}   onClick={() => setSousOnglet("general")}>{t.general || "📋 Général"}</button>
+        <button style={tabStyle(sousOnglet === "stats")}     onClick={() => setSousOnglet("stats")}>📊 Stats</button>
       </div>
+
+      {sousOnglet === "stats" && <PremiumHistorique active={active} depenses={depenses} isPremium={isPremium} isUltra={isUltra} onShowPremium={onShowPremium} />}
 
       {sousOnglet === "general" && (
         <div>
@@ -1024,16 +1029,22 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
               )}
             </div>
           ))}
-          {/* Bouton scanner facture */}
-          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,161,0,0.15)", border: `1px solid ${C.orange}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.orange, fontWeight: 700, fontSize: 14 }}>
-            {scanning ? "⏳ Analyse en cours..." : "📷 Scanner une facture"}
-            <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
-              const file = e.target.files[0]; if (!file) return;
-              const reader = new FileReader();
-              reader.onload = ev => scanFacture(ev.target.result);
-              reader.readAsDataURL(file);
-            }} />
-          </label>
+          {/* Bouton scanner facture — Ultra uniquement */}
+          {isUltra ? (
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,161,0,0.15)", border: `1px solid ${C.orange}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.orange, fontWeight: 700, fontSize: 14 }}>
+              {scanning ? "⏳ Analyse en cours..." : "📷 Scanner une facture"}
+              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => scanFacture(ev.target.result);
+                reader.readAsDataURL(file);
+              }} />
+            </label>
+          ) : (
+            <button onClick={() => onShowPremium?.()} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: `${C.purple}15`, border: `1px solid ${C.purple}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.purple, fontWeight: 700, fontSize: 14, width: "100%" }}>
+              💎 Scanner une facture <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>(Ultra)</span>
+            </button>
+          )}
           <button style={btn({ background: showForm ? C.surface : C.blue, color: showForm ? C.muted : "white", boxShadow: "none", marginBottom: 12 })} onClick={() => setShowForm(f => !f)}>{showForm ? (t.annuler || "✕ Annuler") : (t.ajouterDepense || "➕ Ajouter une dépense")}</button>
           {showForm && (
             <div style={card({ padding: 20 })}>
@@ -1098,36 +1109,46 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
 }
 
 // ─── PREMIUM HISTORIQUE ───────────────────────────────────────────
-function PremiumHistorique({ active, depenses = [] }) {
+function PremiumHistorique({ active, depenses = [], isPremium = true, isUltra = true, onShowPremium }) {
   if (!active) return null;
 
   const myDep = depenses.filter(d => d.vehicleId === active.id);
-  const carburant = myDep.filter(d => d.type === "carburant").sort((a, b) => a.km - b.km);
-  
-  // Total km depuis le début
-  const totalKm = carburant.length >= 2
-    ? carburant[carburant.length - 1].km - carburant[0].km
-    : 0;
+  const now = new Date();
+  const moisActuel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-  // Total dépenses depuis le début
-  const totalDepenses = myDep.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
+  const cutoffDate = (months) => {
+    const d = new Date(now); d.setMonth(d.getMonth() - months + 1); d.setDate(1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
 
-  // Grouper par mois
+  // CE MOIS-CI (libre)
+  const depMois = myDep.filter(d => d.date?.startsWith(moisActuel));
+  const totalMois = depMois.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
+  const carbMois = depMois.filter(d => d.type === "carburant" && d.km).sort((a, b) => a.km - b.km);
+  const kmMois = carbMois.length >= 2 ? carbMois[carbMois.length - 1].km - carbMois[0].km : 0;
+
+  // Période étendue selon le plan
+  const periodMonths = isUltra ? 12 : 3;
+  const periodLabel = isUltra ? "12 DERNIERS MOIS" : "3 DERNIERS MOIS";
+  const depPeriod = isPremium
+    ? (isUltra ? myDep : myDep.filter(d => d.date && d.date.substring(0, 7) >= cutoffDate(3)))
+    : [];
+  const totalPeriod = depPeriod.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
+  const carbPeriod = depPeriod.filter(d => d.type === "carburant" && d.km).sort((a, b) => a.km - b.km);
+  const kmPeriod = carbPeriod.length >= 2 ? carbPeriod[carbPeriod.length - 1].km - carbPeriod[0].km : 0;
+
   const parMois = {};
-  myDep.forEach(d => {
+  depPeriod.forEach(d => {
     if (!d.date) return;
-    const mois = d.date.substring(0, 7); // "2026-04"
-    if (!parMois[mois]) parMois[mois] = { depenses: 0, km: 0, carburant: [] };
+    const mois = d.date.substring(0, 7);
+    if (!parMois[mois]) parMois[mois] = { depenses: 0, carburant: [] };
     parMois[mois].depenses += parseFloat(d.montant) || 0;
     if (d.type === "carburant" && d.km) parMois[mois].carburant.push(parseInt(d.km));
   });
-
-  // Calculer km par mois
   Object.keys(parMois).forEach(mois => {
     const kms = parMois[mois].carburant.sort((a, b) => a - b);
     parMois[mois].km = kms.length >= 2 ? kms[kms.length - 1] - kms[0] : 0;
   });
-
   const moisTries = Object.keys(parMois).sort().reverse();
 
   const formatMois = (str) => {
@@ -1136,67 +1157,103 @@ function PremiumHistorique({ active, depenses = [] }) {
     return `${noms[parseInt(m) - 1]} ${y}`;
   };
 
+  const lockCard = (label, desc, plan) => (
+    <div style={{ background: C.surface, borderRadius: 18, padding: 24, textAlign: "center", border: `1px solid ${plan === "ultra" ? C.purple : C.blue}33` }}>
+      <div style={{ fontSize: 36, marginBottom: 10 }}>{plan === "ultra" ? "💎" : "🔒"}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 16, lineHeight: 1.6 }}>{desc}</div>
+      <button onClick={() => onShowPremium?.()} style={{ background: plan === "ultra" ? `linear-gradient(135deg, ${C.purple}, #8b5cf6)` : C.blue, border: "none", borderRadius: 14, padding: "12px 24px", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+        {plan === "ultra" ? "💎 Passer Ultra Premium" : "🔒 Voir les plans"}
+      </button>
+    </div>
+  );
+
   return (
     <div>
-      {/* Total depuis le début */}
-      <div style={{ background: "linear-gradient(135deg, #1a2a4a, #2157FF22)", border: `1px solid ${C.blue}33`, borderRadius: 18, padding: 20, marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>DEPUIS LE DÉBUT</div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 32, fontWeight: 900, color: C.orange }}>{totalDepenses.toFixed(0)} €</div>
-            <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Total dépenses</div>
-          </div>
-          {totalKm > 0 && (
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 32, fontWeight: 900, color: C.green }}>{totalKm.toLocaleString()}</div>
-              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>km parcourus</div>
-            </div>
-          )}
+      {/* ── CE MOIS-CI (libre) ── */}
+      <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>CE MOIS-CI</div>
+      {depMois.length === 0 ? (
+        <div style={card({ textAlign: "center", padding: 24, color: C.muted })}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
+          <div>Pas encore de données ce mois-ci</div>
         </div>
+      ) : (
+        <div style={{ background: "linear-gradient(135deg, #1a2a4a, #2157FF22)", border: `1px solid ${C.blue}33`, borderRadius: 18, padding: 20, marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: C.orange }}>{totalMois.toFixed(0)} €</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Dépenses</div>
+            </div>
+            {kmMois > 0 && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 32, fontWeight: 900, color: C.green }}>{kmMois.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>km parcourus</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── PÉRIODE ÉTENDUE (premium / ultra) ── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{periodLabel}</div>
+        {!isPremium && <span style={{ background: C.blue + "33", color: C.blue, borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 800 }}>🔒 PREMIUM</span>}
+        {isPremium && !isUltra && <span style={{ background: C.purple + "33", color: C.purple, borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 800 }}>💎 ULTRA = 1 AN</span>}
       </div>
 
-      {/* Récapitulatif mois par mois */}
-      <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>MOIS PAR MOIS</div>
-      {moisTries.length === 0 ? (
-        <div style={card({ textAlign: "center", padding: 32, color: C.muted })}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>📊</div>
-          <div>Pas encore de données</div>
-        </div>
-      ) : moisTries.map(mois => (
-        <div key={mois} style={card({ padding: "14px 16px" })}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{formatMois(mois)}</div>
-            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-              {parMois[mois].km > 0 && (
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{parMois[mois].km.toLocaleString()} km</div>
+      {!isPremium
+        ? lockCard("Statistiques sur 3 mois", "Accédez aux 3 derniers mois avec Premium, et à 1 an complet avec Ultra.", "premium")
+        : (
+          <>
+            {depPeriod.length > 0 && (
+              <div style={{ background: isUltra ? "linear-gradient(135deg, #1a2a1a, #22ff0011)" : "linear-gradient(135deg, #1a2a4a, #2157FF11)", border: `1px solid ${isUltra ? C.green : C.blue}33`, borderRadius: 18, padding: 20, marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 32, fontWeight: 900, color: C.orange }}>{totalPeriod.toFixed(0)} €</div>
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Total {isUltra ? "12 mois" : "3 mois"}</div>
+                  </div>
+                  {kmPeriod > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 32, fontWeight: 900, color: C.green }}>{kmPeriod.toLocaleString()}</div>
+                      <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>km / {isUltra ? "12 mois" : "3 mois"}</div>
+                    </div>
+                  )}
                 </div>
-              )}
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: C.orange }}>{parMois[mois].depenses.toFixed(2)} €</div>
               </div>
-            </div>
-          </div>
-        </div>
-      ))}
+            )}
+            {moisTries.length === 0 ? (
+              <div style={card({ textAlign: "center", padding: 32, color: C.muted })}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>📊</div>
+                <div>Pas encore de données</div>
+              </div>
+            ) : moisTries.map(mois => (
+              <div key={mois} style={card({ padding: "14px 16px" })}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{formatMois(mois)}</div>
+                  <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                    {parMois[mois].km > 0 && <div style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{parMois[mois].km.toLocaleString()} km</div>}
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.orange }}>{parMois[mois].depenses.toFixed(2)} €</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )
+      }
     </div>
   );
 }
 
 // ─── HISTORIQUE ───────────────────────────────────────────────────
-export function HistoriqueScreen({ active, vehicles, setActive, depenses = [], t = {}, isUltra = true, onShowPremium }) {
-  const [onglet, setOnglet] = useState("premium");
-
-  const history = [...(active?.history || [])].reverse();
-  const historyRecent = history.slice(0, 10);
-
-  const tabStyle = (on) => ({
-    flex: 1, padding: "10px 0", borderRadius: 20, border: "none",
-    cursor: "pointer", fontSize: 12, fontWeight: 700,
-    background: on ? C.green : C.blue,
-    color: on ? "#000" : "white",
-    boxShadow: on ? `0 2px 12px ${C.green}44` : `0 2px 8px ${C.blue}44`,
-  });
+export function HistoriqueScreen({ active, vehicles, setActive, depenses = [], t = {}, isPremium = true, isUltra = true, onShowPremium }) {
+  const allHistory = [...(active?.history || [])].reverse();
+  const cutoff3m = (() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return d; })();
+  const history = isUltra
+    ? allHistory
+    : isPremium
+      ? allHistory.filter(h => { const [d, m, y] = h.date.split("/"); return new Date(`${y}-${m}-${d}`) >= cutoff3m; })
+      : [];
+  const historyRecent = history.slice(0, isUltra ? undefined : 50);
 
   const getDetails = (actions = []) => {
     const problemes = actions.filter(a => a.item?.includes("→ PROBLEME")).map(a => a.item.replace(" → PROBLEME", "").trim());
@@ -1214,24 +1271,24 @@ export function HistoriqueScreen({ active, vehicles, setActive, depenses = [], t
         </div>
       )}
 
-      {/* Onglets */}
-      <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 24, padding: 4, marginBottom: 16, gap: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
-        <button style={tabStyle(onglet === "premium")} onClick={() => isUltra ? setOnglet("premium") : onShowPremium?.()}>
-          {isUltra ? "📊 Dépenses & km" : "🔒 Dépenses & km"}
-        </button>
-        <button style={tabStyle(onglet === "recent")} onClick={() => setOnglet("recent")}>🕐 Récent</button>
-      </div>
-
-      {/* Onglet récent */}
-      {onglet === "recent" && (
+      {/* Historique récent */}
+      {(
         <>
-          {historyRecent.length === 0 ? (
+          {!isPremium && (
+            <div style={{ background: C.surface, borderRadius: 18, padding: 24, textAlign: "center", border: `1px solid ${C.blue}33`, marginBottom: 14 }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>🔒</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 6 }}>Historique verrouillé</div>
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 16, lineHeight: 1.6 }}>Accédez aux 3 derniers mois avec Premium, ou à l'historique illimité avec Ultra.</div>
+              <button onClick={() => onShowPremium?.()} style={{ background: C.blue, border: "none", borderRadius: 14, padding: "12px 24px", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>🔒 Voir les plans</button>
+            </div>
+          )}
+          {isPremium && historyRecent.length === 0 ? (
             <div style={card({ textAlign: "center", padding: 32, color: C.muted })}>
               <div style={{ fontSize: 40, marginBottom: 10 }}>📋</div>
               <div style={{ fontWeight: 600 }}>{t.pasDeVerif || 'Pas encore de vérif ici'}</div>
               <div style={{ fontSize: 12, marginTop: 6 }}>{t.lancerChecklist || 'Lance ta première checklist !'}</div>
             </div>
-          ) : historyRecent.map((entry, i) => {
+          ) : isPremium && historyRecent.map((entry, i) => {
             const { problemes, bientot, hasProb, hasBientot } = getDetails(entry.actions);
             const okCount = (entry.actions || []).filter(a => a.item?.includes("→ OK")).length;
             const statusColor = hasProb ? C.red : hasBientot ? C.yellow : C.green;
@@ -1268,17 +1325,12 @@ export function HistoriqueScreen({ active, vehicles, setActive, depenses = [], t
           })}
         </>
       )}
-
-      {/* Onglet Premium - Historique illimité */}
-      {onglet === "premium" && (
-        <PremiumHistorique active={active} depenses={depenses} />
-      )}
     </div>
   );
 }
 
 // ─── RAPPORT ──────────────────────────────────────────────────────
-export function RapportScreen({ active, checklist, prog, docs, exportPDF, localInvoices, depenses, t = {} }) {
+export function RapportScreen({ active, checklist, prog, docs, exportPDF, localInvoices, depenses, t = {}, isPremium = true, onShowPremium }) {
   if (!active) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}><div style={{ fontSize: 48, marginBottom: 12 }}>📊</div><div style={{ fontWeight: 600 }}>{t.choisirVehicule || "Choisis un véhicule depuis l'accueil"}</div></div>;
 
   const problems = checklist.filter(item => active.checks?.[item.id] === "PROBLEME");
@@ -1297,7 +1349,9 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
           <div style={{ fontSize: 12, color: C.muted2, marginTop: 2 }}>{t.rapportInspection || "Rapport d'inspection"}</div>
           <div style={{ fontSize: 11, color: C.muted, marginTop: 1 }}>{t.genere || "Généré le"} {today} {t.a || "à"} {now2}</div>
         </div>
-        <button onClick={exportPDF} style={{ background: C.surface2, color: C.text, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>⬆ PDF</button>
+        <button onClick={isPremium ? exportPDF : () => onShowPremium?.()} style={{ background: isPremium ? C.surface2 : C.purple + "22", color: isPremium ? C.text : C.purple, border: `1px solid ${isPremium ? "rgba(255,255,255,0.08)" : C.purple + "44"}`, borderRadius: 10, padding: "8px 14px", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
+          {isPremium ? "⬆ PDF" : "🔒 PDF"}
+        </button>
       </div>
 
       <div style={card({ padding: "10px 14px", marginBottom: 8 })}>
@@ -1336,7 +1390,10 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
         </div>
       )}
 
-      <button style={btn()} onClick={exportPDF}>{t.telechargerPDF || "📄 Télécharger le rapport (PDF)"}</button>
+      {isPremium
+        ? <button style={btn()} onClick={exportPDF}>{t.telechargerPDF || "📄 Télécharger le rapport (PDF)"}</button>
+        : <button style={btn({ background: C.purple, boxShadow: `0 4px 20px ${C.purple}55` })} onClick={() => onShowPremium?.()}>🔒 Export PDF — Premium requis</button>
+      }
 
       {/* Certificat d'entretien */}
       {(() => {
