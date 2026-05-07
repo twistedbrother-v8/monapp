@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "checkar-4a9ad"
-  }
+  },
+  "targets": {
+    "checkar-4a9ad": {
+      "hosting": {
+        "main": [
+          "checkar-4a9ad"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
