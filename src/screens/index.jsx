@@ -590,6 +590,7 @@ export function ChecklistScreen({ active, checklist, prog, updateCheck, setTab, 
 // ─── ASSURANCE SECTION ────────────────────────────────────────────
 function AssuranceSection({ assDocs, docs, setDocs, form, setForm, showAssForm, setShowAssForm, confirmDocId, setConfirmDocId, addDoc, pillColor, pillLabel, callBtn, sCard, sBtn, t }) {
   const [showEchForm, setShowEchForm] = useState(false);
+  const [confirmModify, setConfirmModify] = useState(false);
 
   return (
     <div>
@@ -605,20 +606,26 @@ function AssuranceSection({ assDocs, docs, setDocs, form, setForm, showAssForm, 
               {d.num && <div style={{ fontSize: 12, color: C.muted }}>N° {d.num}</div>}
               {d.tel && <div style={{ fontSize: 12, color: C.muted, marginTop: 3 }}>📞 {d.tel}</div>}
             </div>
-            <button onClick={() => setConfirmDocId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
           </div>
-          {confirmDocId === d.id && (
-            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              <button onClick={() => setConfirmDocId(null)} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
-              <button onClick={() => { setDocs(p => p.filter(x => x.id !== d.id)); setConfirmDocId(null); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🗑️ Supprimer</button>
-            </div>
-          )}
           {d.tel && callBtn(d.tel, t.appelerAssurance || "Appeler l'assurance")}
         </div>
       ))}
-      <button style={sBtn(!showAssForm)} onClick={() => setShowAssForm(f => !f)}>
+      <button style={sBtn(!showAssForm)} onClick={() => {
+        if (showAssForm) { setShowAssForm(false); setConfirmModify(false); }
+        else if (assDocs.length > 0) { setConfirmModify(true); }
+        else { setShowAssForm(true); }
+      }}>
         {showAssForm ? "✕ Annuler" : assDocs.length > 0 ? "✏️ Modifier les coordonnées" : "➕ Ajouter l'assurance"}
       </button>
+      {confirmModify && !showAssForm && (
+        <div style={{ background: "#1e1e24", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: 16, marginTop: 8 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>Confirmer la modification ?</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => setConfirmModify(false)} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+            <button onClick={() => { setConfirmModify(false); setShowAssForm(true); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>✏️ Modifier</button>
+          </div>
+        </div>
+      )}
       {showAssForm && (
         <div style={sCard({ padding: 20 })}>
           {[["ORGANISME","text","AXA, MAAF…","assOrg"],["N° CONTRAT","text","123 456 789","assNum"],["TÉLÉPHONE","tel","01 23 45 67 89","assTel"]].map(([label,type,ph,key]) => (
@@ -687,6 +694,8 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
   const [showGarForm, setShowGarForm] = useState(false);
   const [showRevForm, setShowRevForm] = useState(false);
   const [confirmDocId, setConfirmDocId] = useState(null);
+  const [confirmModifyGar, setConfirmModifyGar] = useState(false);
+  const [confirmModifyRev, setConfirmModifyRev] = useState(false);
 
   React.useEffect(() => {
     setForm(f => ({ ...f, garNom: garageInfo?.nom || "", garTel: garageInfo?.tel || "", garAdresse: garageInfo?.adresse || "" }));
@@ -801,7 +810,20 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
               )}
             </div>
           )}
-          <button style={sBtn(!showGarForm)} onClick={() => setShowGarForm(f => !f)}>{showGarForm ? (t.annuler || "✕ Annuler") : garageInfo?.nom ? (t.modifierGarage || "✏️ Modifier le garage") : (t.ajouterGarage || "➕ Ajouter le garage")}</button>
+          <button style={sBtn(!showGarForm)} onClick={() => {
+            if (showGarForm) { setShowGarForm(false); setConfirmModifyGar(false); }
+            else if (garageInfo?.nom) { setConfirmModifyGar(true); }
+            else { setShowGarForm(true); }
+          }}>{showGarForm ? (t.annuler || "✕ Annuler") : garageInfo?.nom ? (t.modifierGarage || "✏️ Modifier le garage") : (t.ajouterGarage || "➕ Ajouter le garage")}</button>
+          {confirmModifyGar && !showGarForm && (
+            <div style={{ background: "#1e1e24", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: 16, marginTop: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>Confirmer la modification ?</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setConfirmModifyGar(false)} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+                <button onClick={() => { setConfirmModifyGar(false); setShowGarForm(true); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>✏️ Modifier</button>
+              </div>
+            </div>
+          )}
           {showGarForm && (
             <div style={sCard({ padding: 20 })}>
               {[[t.nomGarage || "NOM DU GARAGE","text","Garage Dupont…","garNom"],[t.telephone || "TÉLÉPHONE","tel","01 23 45 67 89","garTel"],[t.adresse || "ADRESSE","text","12 rue de la Paix, Paris","garAdresse"]].map(([label,type,ph,key]) => (
@@ -835,7 +857,20 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
               )}
             </div>
           ))}
-          <button style={sBtn(!showRevForm)} onClick={() => setShowRevForm(f => !f)}>{showRevForm ? (t.annuler || "✕ Annuler") : myDocs.filter(d => d.type === "revision").length > 0 ? (t.modifierRevision || "✏️ Modifier la révision") : (t.ajouterRevision || "➕ Ajouter une révision")}</button>
+          <button style={sBtn(!showRevForm)} onClick={() => {
+            if (showRevForm) { setShowRevForm(false); setConfirmModifyRev(false); }
+            else if (myDocs.filter(d => d.type === "revision").length > 0) { setConfirmModifyRev(true); }
+            else { setShowRevForm(true); }
+          }}>{showRevForm ? (t.annuler || "✕ Annuler") : myDocs.filter(d => d.type === "revision").length > 0 ? (t.modifierRevision || "✏️ Modifier la révision") : (t.ajouterRevision || "➕ Ajouter une révision")}</button>
+          {confirmModifyRev && !showRevForm && (
+            <div style={{ background: "#1e1e24", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: 16, marginTop: 8 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>Confirmer la modification ?</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setConfirmModifyRev(false)} style={{ flex: 1, background: "#2a2a2f", border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+                <button onClick={() => { setConfirmModifyRev(false); setShowRevForm(true); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>✏️ Modifier</button>
+              </div>
+            </div>
+          )}
           {showRevForm && (
             <div style={sCard({ padding: 20 })}>
               <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.dateProchaineRevision || "DATE DE LA PROCHAINE RÉVISION"}</div>
@@ -1309,29 +1344,10 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
         const depGarage = (depenses || []).filter(d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage");
         if (history.length === 0 && depGarage.length === 0) return null;
 
-        // Génération hash unique basé sur les données du véhicule
-        const dataToHash = JSON.stringify({
-          id: active.id,
-          name: active.name,
-          immat: active.immat,
-          history: history.length,
-          depenses: depGarage.length,
-          lastUpdate: history[history.length - 1]?.date || "",
-        });
-        const hash = btoa(dataToHash).substring(0, 32).toUpperCase();
-        const certId = `CHK-${active.id.toString().slice(-6)}-${hash.substring(0, 8)}`;
+        const certId = `CHK-${active.id.toString().slice(-6)}`;
         const today = new Date().toLocaleDateString("fr-FR");
-
-        const certData = {
-          certificat: certId,
-          vehicule: active.name,
-          immat: active.immat || "—",
-          verifications: history.length,
-          depenses: depGarage.length,
-          date: today,
-          app: "CHECKAR",
-        };
-        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(JSON.stringify(certData))}`;
+        const publicUrl = `https://checkar-4a9ad.web.app/certificat.html?id=${certId}&v=${encodeURIComponent(active.name)}&i=${encodeURIComponent(active.immat || "")}&verif=${history.length}&interv=${depGarage.length}&date=${encodeURIComponent(today)}&travaux=${encodeURIComponent(JSON.stringify(depGarage.map(d => ({ date: d.date, desc: d.description || d.categorie, montant: d.montant })).slice(-10)))}`;
+        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`;
 
         return (
           <div style={{ background: "linear-gradient(135deg, #1a2a1a, #0a1a0a)", border: "2px solid #22ff0044", borderRadius: 20, padding: 20, marginTop: 8, textAlign: "center" }}>
@@ -1357,7 +1373,7 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
               </div>
             </div>
             <div style={{ fontSize: 10, color: C.muted, marginTop: 12, lineHeight: 1.5 }}>
-              Scannez ce QR code pour vérifier l'authenticité du carnet d'entretien
+              Scannez ce QR code pour voir l'historique complet des interventions
             </div>
           </div>
         );
