@@ -1539,17 +1539,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
             { icon: "⛽", label: t.stationService || "Station service",      query: "station service",  color: C.yellow },
           ].map(({ icon, label, query, color }) => (
             <button key={query} onClick={() => {
-              if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                  pos => {
-                    const url = `geo:${pos.coords.latitude},${pos.coords.longitude}?q=${encodeURIComponent(query)}`;
-                    window.location.href = url;
-                  },
-                  () => { window.location.href = `geo:0,0?q=${encodeURIComponent(query)}`; }
-                );
-              } else {
-                window.location.href = `geo:0,0?q=${encodeURIComponent(query)}`;
-              }
+              window.open(`https://www.google.com/maps/search/${encodeURIComponent(query)}`, '_blank', 'noopener');
             }} style={{ background: C.surface, border: `1px solid ${color}33`, borderRadius: 16, padding: "16px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 14, width: "100%", marginBottom: 10, textAlign: "left" }}>
               <div style={{ width: 46, height: 46, borderRadius: 14, background: color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{icon}</div>
               <div style={{ flex: 1 }}>
