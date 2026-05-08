@@ -1,0 +1,344 @@
+import React, { useState } from "react";
+import { C, card, btn, input, VehicleChip } from "./shared";
+
+function PremiumHistorique({ active, depenses = [], isPremium = true, isUltra = true, onShowPremium }) {
+  if (!active) return null;
+
+  const myDep = depenses.filter(d => d.vehicleId === active.id);
+  const now = new Date();
+  const moisActuel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const cutoffDate = (months) => {
+    const d = new Date(now); d.setMonth(d.getMonth() - months + 1); d.setDate(1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+
+  const depMois = myDep.filter(d => d.date?.startsWith(moisActuel));
+  const totalMois = depMois.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
+  const carbMois = depMois.filter(d => d.type === "carburant" && d.km).sort((a, b) => a.km - b.km);
+  const kmMois = carbMois.length >= 2 ? carbMois[carbMois.length - 1].km - carbMois[0].km : 0;
+
+  const periodLabel = isUltra ? "12 DERNIERS MOIS" : "3 DERNIERS MOIS";
+  const depPeriod = isPremium
+    ? (isUltra ? myDep : myDep.filter(d => d.date && d.date.substring(0, 7) >= cutoffDate(3)))
+    : [];
+  const totalPeriod = depPeriod.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
+  const carbPeriod = depPeriod.filter(d => d.type === "carburant" && d.km).sort((a, b) => a.km - b.km);
+  const kmPeriod = carbPeriod.length >= 2 ? carbPeriod[carbPeriod.length - 1].km - carbPeriod[0].km : 0;
+
+  const parMois = {};
+  depPeriod.forEach(d => {
+    if (!d.date) return;
+    const mois = d.date.substring(0, 7);
+    if (!parMois[mois]) parMois[mois] = { depenses: 0, carburant: [] };
+    parMois[mois].depenses += parseFloat(d.montant) || 0;
+    if (d.type === "carburant" && d.km) parMois[mois].carburant.push(parseInt(d.km));
+  });
+  Object.keys(parMois).forEach(mois => {
+    const kms = parMois[mois].carburant.sort((a, b) => a - b);
+    parMois[mois].km = kms.length >= 2 ? kms[kms.length - 1] - kms[0] : 0;
+  });
+  const moisTries = Object.keys(parMois).sort().reverse();
+
+  const formatMois = (str) => {
+    const [y, m] = str.split("-");
+    const noms = ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"];
+    return `${noms[parseInt(m) - 1]} ${y}`;
+  };
+
+  const lockCard = (label, desc, plan) => (
+    <div style={{ background: C.surface, borderRadius: 18, padding: 24, textAlign: "center", border: `1px solid ${plan === "ultra" ? C.purple : C.blue}33` }}>
+      <div style={{ fontSize: 36, marginBottom: 10 }}>{plan === "ultra" ? "💎" : "🔒"}</div>
+      <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 16, lineHeight: 1.6 }}>{desc}</div>
+      <button onClick={() => onShowPremium?.()} style={{ background: plan === "ultra" ? `linear-gradient(135deg, ${C.purple}, #8b5cf6)` : C.blue, border: "none", borderRadius: 14, padding: "12px 24px", color: "white", fontWeight: 800, fontSize: 14, cursor: "pointer" }}>
+        {plan === "ultra" ? "💎 Passer Ultra Premium" : "🔒 Voir les plans"}
+      </button>
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1, marginBottom: 10 }}>CE MOIS-CI</div>
+      {depMois.length === 0 ? (
+        <div style={card({ textAlign: "center", padding: 24, color: C.muted })}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📊</div>
+          <div>Pas encore de données ce mois-ci</div>
+        </div>
+      ) : (
+        <div style={{ background: "linear-gradient(135deg, #1a2a4a, #2157FF22)", border: `1px solid ${C.blue}33`, borderRadius: 18, padding: 20, marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: C.orange }}>{totalMois.toFixed(0)} €</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Dépenses</div>
+            </div>
+            {kmMois > 0 && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 32, fontWeight: 900, color: C.green }}>{kmMois.toLocaleString()}</div>
+                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>km parcourus</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{periodLabel}</div>
+        {!isPremium && <span style={{ background: C.blue + "33", color: C.blue, borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 800 }}>🔒 PREMIUM</span>}
+        {isPremium && !isUltra && <span style={{ background: C.purple + "33", color: C.purple, borderRadius: 20, padding: "2px 8px", fontSize: 10, fontWeight: 800 }}>💎 ULTRA = 1 AN</span>}
+      </div>
+
+      {!isPremium
+        ? lockCard("Statistiques sur 3 mois", "Accédez aux 3 derniers mois avec Premium, et à 1 an complet avec Ultra.", "premium")
+        : (
+          <>
+            {depPeriod.length > 0 && (
+              <div style={{ background: isUltra ? "linear-gradient(135deg, #1a2a1a, #22ff0011)" : "linear-gradient(135deg, #1a2a4a, #2157FF11)", border: `1px solid ${isUltra ? C.green : C.blue}33`, borderRadius: 18, padding: 20, marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 32, fontWeight: 900, color: C.orange }}>{totalPeriod.toFixed(0)} €</div>
+                    <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Total {isUltra ? "12 mois" : "3 mois"}</div>
+                  </div>
+                  {kmPeriod > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 32, fontWeight: 900, color: C.green }}>{kmPeriod.toLocaleString()}</div>
+                      <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>km / {isUltra ? "12 mois" : "3 mois"}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {moisTries.length === 0 ? (
+              <div style={card({ textAlign: "center", padding: 32, color: C.muted })}>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>📊</div>
+                <div>Pas encore de données</div>
+              </div>
+            ) : moisTries.map(mois => (
+              <div key={mois} style={card({ padding: "14px 16px" })}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{formatMois(mois)}</div>
+                  <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                    {parMois[mois].km > 0 && <div style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{parMois[mois].km.toLocaleString()} km</div>}
+                    <div style={{ fontSize: 14, fontWeight: 800, color: C.orange }}>{parMois[mois].depenses.toFixed(2)} €</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </>
+        )
+      }
+    </div>
+  );
+}
+
+export function DepensesScreen({ active, vehicles, setVehicles, setActive, depenses, setDepenses, t = {}, isPremium = true, isUltra = true, onShowPremium }) {
+  const [sousOnglet, setSousOnglet] = useState("carburant");
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "" });
+  const [confirmId, setConfirmId] = useState(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanPhoto, setScanPhoto] = useState(null);
+
+  const scanFacture = async (photoData) => {
+    setScanning(true);
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 500,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: "image/jpeg", data: photoData.split(",")[1] } },
+              { type: "text", text: `Analyse cette facture de garage/station service et extrais les informations. Réponds UNIQUEMENT en JSON avec ce format exact : {"date": "YYYY-MM-DD", "montant": "XX.XX", "description": "description courte des travaux", "categorie": "Garage"} . Si tu ne trouves pas une info, mets "" pour cette valeur. La date doit être au format YYYY-MM-DD.` }
+            ]
+          }]
+        })
+      });
+      const data = await response.json();
+      const text = data.content?.[0]?.text || "";
+      const clean = text.replace(/```json|```/g, "").trim();
+      const result = JSON.parse(clean);
+      setForm(f => ({
+        ...f,
+        date: result.date || f.date,
+        montant: result.montant || f.montant,
+        description: result.description || f.description,
+        categorie: result.categorie || f.categorie,
+      }));
+      setShowForm(true);
+      setScanPhoto(null);
+    } catch (e) {
+      alert("Impossible de lire la facture. Remplissez manuellement.");
+    }
+    setScanning(false);
+  };
+
+  if (!active) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}><div style={{ fontSize: 48, marginBottom: 12 }}>💰</div><div style={{ fontWeight: 600 }}>{t.choisirVehicule || "Choisis un véhicule depuis l'accueil"}</div></div>;
+
+  const myDep  = (depenses || []).filter(d => d.vehicleId === active.id);
+  const depGen = myDep.filter(d => d.type === "general");
+  const depCarb= myDep.filter(d => d.type === "carburant");
+  const now        = new Date();
+  const moisActuel = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  const depMois    = myDep.filter(d => d.date?.startsWith(moisActuel));
+  const totalMois  = depMois.reduce((s, d) => s + (parseFloat(d.montant) || 0), 0);
+  const carbMois   = depCarb.filter(d => d.date?.startsWith(moisActuel)).sort((a,b) => a.km - b.km);
+  const kmMois     = carbMois.length >= 2 ? carbMois[carbMois.length-1].km - carbMois[0].km : 0;
+  const CAT_ICONS  = { [t.catFinancement||"Financement"]: "🏦", [t.catAssurance||"Assurance"]: "🛡️", [t.catControle||"Contrôle technique"]: "🚗", [t.catGarage||"Garage"]: "🔧", [t.catPeage||"Péage"]: "🛣️", [t.catLavage||"Lavage"]: "🚿" };
+  const CATEGORIES = [t.catFinancement||"Financement", t.catAssurance||"Assurance", t.catControle||"Contrôle technique", t.catGarage||"Garage", t.catPeage||"Péage", t.catLavage||"Lavage"];
+  const tabStyle   = (on) => ({ flex: 1, padding: "10px 0", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "all 0.2s", background: on ? C.green : C.blue, color: on ? "#000" : "white", boxShadow: on ? `0 2px 12px ${C.green}44` : `0 2px 8px ${C.blue}44` });
+
+  const addDepense = () => {
+    if (sousOnglet === "general") {
+      if (!form.montant || !form.date) return;
+      setDepenses(p => [...p, { id: Date.now(), type: "general", date: form.date, montant: form.montant, categorie: form.categorie, description: form.description, vehicleId: active.id, vehicleName: active.name }]);
+    } else {
+      if (!form.prixCarburant || !form.date || !form.km) return;
+      setDepenses(p => [...p, { id: Date.now(), type: "carburant", date: form.date, montant: form.prixCarburant, km: form.km, litres: form.litres, vehicleId: active.id, vehicleName: active.name }]);
+      if (setVehicles && form.km) {
+        const newKm = parseInt(form.km) || 0;
+        const currentKm = parseInt(active.km) || 0;
+        if (newKm > currentKm) {
+          setVehicles(prev => prev.map(v => v.id === active.id ? { ...v, km: String(newKm) } : v));
+          setActive(prev => prev?.id === active.id ? { ...prev, km: String(newKm) } : prev);
+        }
+      }
+    }
+    setForm({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "" });
+    setShowForm(false);
+  };
+
+  const coutKm = depCarb.length >= 2 ? depCarb.slice().sort((a,b) => a.km - b.km).reduce((acc, d, i, arr) => { if (i === 0) return acc; const kmDiff = d.km - arr[i-1].km; if (kmDiff > 0) acc.push({ km: d.km, cout: (parseFloat(d.montant) / kmDiff).toFixed(2) }); return acc; }, []) : [];
+
+  return (
+    <div style={{ padding: 16, background: C.bg, minHeight: "100vh" }}>
+      {vehicles.length > 1 && <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 14 }}>{vehicles.map(v => <VehicleChip key={v.id} v={v} active={active} setActive={setActive} />)}</div>}
+
+      <div style={card({ display: "flex", justifyContent: "space-between", alignItems: "center" })}>
+        <div>
+          <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1 }}>{t.ceMoisCi || "CE MOIS-CI"}</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: C.text, marginTop: 2 }}>{totalMois.toFixed(2)} €</div>
+          {kmMois > 0 && <div style={{ fontSize: 12, color: C.orange, fontWeight: 700, marginTop: 4 }}>🛣️ {kmMois.toLocaleString()} km {t.parcourus || "parcourus ce mois"}</div>}
+          {(() => {
+            const litresMois = depCarb.filter(d => d.date?.startsWith(moisActuel) && d.litres).reduce((s, d) => s + parseFloat(d.litres), 0);
+            if (litresMois > 0 && kmMois > 0) {
+              const conso = ((litresMois / kmMois) * 100).toFixed(1);
+              return <div style={{ fontSize: 12, color: C.orange, marginTop: 4, fontWeight: 700 }}>⛽ {conso} L/100km</div>;
+            }
+            return null;
+          })()}
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: C.muted }}>{t.general?.replace("📋 ", "") || "Général"}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{depMois.filter(d=>d.type==="general").reduce((s,d)=>s+(parseFloat(d.montant)||0),0).toFixed(2)} €</div>
+          <div style={{ fontSize: 11, color: C.muted, marginTop: 6 }}>{t.carburant?.replace("⛽ ", "") || "Carburant"}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{depMois.filter(d=>d.type==="carburant").reduce((s,d)=>s+(parseFloat(d.montant)||0),0).toFixed(2)} €</div>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", background: "rgba(255,255,255,0.06)", borderRadius: 24, padding: 4, marginBottom: 16, gap: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
+        <button style={tabStyle(sousOnglet === "carburant")} onClick={() => setSousOnglet("carburant")}>{t.carburant || "⛽ Carburant"}</button>
+        <button style={tabStyle(sousOnglet === "general")}   onClick={() => setSousOnglet("general")}>{t.general || "📋 Général"}</button>
+        <button style={tabStyle(sousOnglet === "stats")}     onClick={() => setSousOnglet("stats")}>📊 Stats</button>
+      </div>
+
+      {sousOnglet === "stats" && <PremiumHistorique active={active} depenses={depenses} isPremium={isPremium} isUltra={isUltra} onShowPremium={onShowPremium} />}
+
+      {sousOnglet === "general" && (
+        <div>
+          {depGen.length === 0 && !showForm && <div style={card({ textAlign: "center", padding: 32, color: C.muted })}><div style={{ fontSize: 36, marginBottom: 10 }}>💸</div><div>{t.rienIci || "Rien ici pour l'instant 💸"}</div></div>}
+          {depGen.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => (
+            <div key={d.id} style={card({ padding: "10px 14px" })}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20, flexShrink: 0 }}>{CAT_ICONS[d.categorie] || "💰"}</span>
+                <div style={{ flex: 1 }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ fontSize: 12, color: C.muted }}>{d.categorie}{d.description ? ` · ${d.description}` : ""} · {new Date(d.date).toLocaleDateString("fr-FR")}</div><div style={{ fontWeight: 800, fontSize: 15, color: C.text }}>{parseFloat(d.montant).toFixed(2)} €</div></div></div>
+                <button onClick={() => setConfirmId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14 }}>✕</button>
+              </div>
+              {confirmId === d.id && (
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <button onClick={() => setConfirmId(null)} style={{ flex: 1, background: C.surface, border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+                  <button onClick={() => { setDepenses(p => p.filter(x => x.id !== d.id)); setConfirmId(null); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🗑️ Supprimer</button>
+                </div>
+              )}
+            </div>
+          ))}
+          {isUltra ? (
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,161,0,0.15)", border: `1px solid ${C.orange}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.orange, fontWeight: 700, fontSize: 14 }}>
+              {scanning ? "⏳ Analyse en cours..." : "📷 Scanner une facture"}
+              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => scanFacture(ev.target.result);
+                reader.readAsDataURL(file);
+              }} />
+            </label>
+          ) : (
+            <button onClick={() => onShowPremium?.()} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: `${C.purple}15`, border: `1px solid ${C.purple}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.purple, fontWeight: 700, fontSize: 14, width: "100%" }}>
+              💎 Scanner une facture <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>(Ultra)</span>
+            </button>
+          )}
+          <button style={btn({ background: showForm ? C.surface : C.blue, color: showForm ? C.muted : "white", boxShadow: "none", marginBottom: 12 })} onClick={() => setShowForm(f => !f)}>{showForm ? (t.annuler || "✕ Annuler") : (t.ajouterDepense || "➕ Ajouter une dépense")}</button>
+          {showForm && (
+            <div style={card({ padding: 20 })}>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.date || "DATE"}</div>
+              <input type="date" style={input} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.categorie || "CATÉGORIE"}</div>
+              <select style={input} value={form.categorie} onChange={e => setForm(f => ({ ...f, categorie: e.target.value }))}>{CATEGORIES.map(c => <option key={c} value={c}>{CAT_ICONS[c]} {c}</option>)}</select>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.montant || "MONTANT (€)"}</div>
+              <input type="number" style={input} placeholder="Ex: 150.00" value={form.montant} onChange={e => setForm(f => ({ ...f, montant: e.target.value }))} />
+              {form.categorie === (t.catGarage || "Garage") && (<><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.description || "DESCRIPTION"}</div><input style={input} placeholder="Ex: Vidange + filtre huile" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></>)}
+              <button style={btn({ opacity: form.montant && form.date && (form.categorie !== "Garage" || form.description) ? 1 : 0.5 })} onClick={addDepense}>{t.enregistrerDepense || "✅ Enregistrer"}</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {sousOnglet === "carburant" && (
+        <div>
+          {depCarb.length === 0 && !showForm && <div style={card({ textAlign: "center", padding: 32, color: C.muted })}><div style={{ fontSize: 36, marginBottom: 10 }}>⛽</div><div>{t.premierPlein || "Premier plein à enregistrer ⛽"}</div></div>}
+          {coutKm.length > 0 && (
+            <div style={card()}>
+              <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1, marginBottom: 12 }}>{t.coutAuKm || "COÛT AU KM"}</div>
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
+                {coutKm.slice(-8).map((p, i) => { const max = Math.max(...coutKm.map(x => x.cout)); const h = max > 0 ? (p.cout / max) * 70 : 0; return <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}><div style={{ fontSize: 9, color: C.muted }}>{p.cout}€</div><div style={{ width: "100%", height: h + "px", borderRadius: "4px 4px 0 0", background: `linear-gradient(180deg, ${C.blue}, ${C.green})`, minHeight: 4 }} /></div>; })}
+              </div>
+              <div style={{ fontSize: 11, color: C.muted, textAlign: "center", marginTop: 8 }}>{t.moyenne || "Moyenne"} : {(coutKm.reduce((s,p) => s + parseFloat(p.cout), 0) / coutKm.length).toFixed(2)} €/km</div>
+            </div>
+          )}
+          {depCarb.sort((a,b) => new Date(b.date) - new Date(a.date)).map(d => (
+            <div key={d.id} style={card({ padding: "10px 14px" })}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 20, flexShrink: 0 }}>⛽</span>
+                <div style={{ flex: 1 }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={{ fontSize: 12, color: C.muted }}>📍 {parseInt(d.km).toLocaleString()} km · {new Date(d.date).toLocaleDateString("fr-FR")}</div><div style={{ fontWeight: 800, fontSize: 15, color: C.text }}>{parseFloat(d.montant).toFixed(2)} €</div></div></div>
+                <button onClick={() => setConfirmId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 14 }}>✕</button>
+              </div>
+              {confirmId === d.id && (
+                <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                  <button onClick={() => setConfirmId(null)} style={{ flex: 1, background: C.surface, border: "none", borderRadius: 10, padding: "8px 0", color: C.muted, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>Annuler</button>
+                  <button onClick={() => { setDepenses(p => p.filter(x => x.id !== d.id)); setConfirmId(null); }} style={{ flex: 1, background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 10, padding: "8px 0", color: C.red, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>🗑️ Supprimer</button>
+                </div>
+              )}
+            </div>
+          ))}
+          <button style={btn({ background: showForm ? C.surface : C.blue, color: showForm ? C.muted : "white", boxShadow: "none", marginBottom: 12 })} onClick={() => setShowForm(f => !f)}>{showForm ? (t.annuler || "✕ Annuler") : (t.ajouterPlein || "➕ Ajouter un plein")}</button>
+          {showForm && (
+            <div style={card({ padding: 20 })}>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.date || "DATE"}</div>
+              <input type="date" style={input} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.kilometrageCompteur || "KILOMÉTRAGE DU COMPTEUR"} *</div>
+              <input type="number" style={input} placeholder="Ex: 85000" value={form.km} onChange={e => setForm(f => ({ ...f, km: e.target.value }))} />
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.prix || "PRIX (€)"}</div>
+              <input type="number" style={input} placeholder="Ex: 65.50" value={form.prixCarburant} onChange={e => setForm(f => ({ ...f, prixCarburant: e.target.value }))} />
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>LITRES</div>
+              <input type="number" style={input} placeholder="Ex: 45.5" value={form.litres} onChange={e => setForm(f => ({ ...f, litres: e.target.value }))} />
+              <button style={btn({ opacity: form.prixCarburant && form.date && form.km ? 1 : 0.5 })} onClick={addDepense}>{t.enregistrerPlein || "✅ Enregistrer le plein"}</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

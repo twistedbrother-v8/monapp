@@ -80,7 +80,7 @@ export default function App() {
     const browserLang = navigator.language || navigator.userLanguage || "fr";
     return browserLang.startsWith("fr") ? "fr" : "en";
   });
-  const [langLoaded, setLangLoaded] = useState(false);
+  const langLoadedRef = React.useRef(false);
   const [name,          setName]          = useState("");
   const [immat,         setImmat]         = useState("");
   const [type,          setType]          = useState("voiture");
@@ -108,11 +108,11 @@ export default function App() {
       const data = await load();
       if (!data) return;
       // Charger la langue depuis Firebase uniquement au premier chargement
-      if (!langLoaded) {
+      if (!langLoadedRef.current) {
         const savedLang = data.lang || localStorage.getItem("lang") || "fr";
         setLang(savedLang);
         localStorage.setItem("lang", savedLang);
-        setLangLoaded(true);
+        langLoadedRef.current = true;
       }
       if (data.vehicles) {
         const vs = JSON.parse(data.vehicles);
@@ -160,23 +160,23 @@ export default function App() {
       }
       if (data.depenses) setDepenses(JSON.parse(data.depenses));
     })();
-  }, [userId]); // eslint-disable-line
+  }, [userId, load]);
 
   useEffect(() => {
     if (!userId || vehicles.length === 0) return;
     const vehiclesNoPhoto = vehicles.filter(v => !v.isShared).map(({ photo, ...v }) => v);
     save("vehicles", vehiclesNoPhoto);
-  }, [vehicles]); // eslint-disable-line
+  }, [vehicles, userId, save]);
 
   useEffect(() => {
     if (!userId) return;
     save("depenses", depenses);
-  }, [depenses]); // eslint-disable-line
+  }, [depenses, userId, save]);
 
   useEffect(() => {
     if (!userId) return;
     save("docs", docs);
-  }, [docs]); // eslint-disable-line
+  }, [docs, userId, save]);
 
   useEffect(() => {
     localStorage.setItem("invoices", JSON.stringify(localInvoices));

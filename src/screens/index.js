@@ -1,5 +1,3 @@
-// Remplacé par index.js + fichiers individuels par écran.
-// Ce fichier ne doit plus être importé directement.
 export { AccueilScreen } from "./AccueilScreen";
 export { ChecklistScreen } from "./ChecklistScreen";
 export { DocumentsScreen } from "./DocumentsScreen";
