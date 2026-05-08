@@ -37,6 +37,9 @@
     .total { background: rgba(255,177,51,0.1); border: 1px solid rgba(255,177,51,0.3); border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
     .total-label { font-size: 13px; color: #888; font-weight: 700; }
     .total-value { font-size: 20px; font-weight: 900; color: #ffb133; }
+    #loading { text-align: center; padding: 60px 20px; color: #888; font-size: 14px; }
+    #content { display: none; }
+    .error { text-align: center; padding: 40px 20px; color: #ef4444; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -47,37 +50,41 @@
   </div>
 
   <div class="container">
-    <div class="cert-badge">
-      <div class="cert-label">🔗 CERTIFICAT D'ENTRETIEN VÉRIFIÉ</div>
-      <div class="cert-id" id="certId">—</div>
-    </div>
+    <div id="loading">⏳ Chargement du certificat...</div>
 
-    <div class="verified">
-      <div class="verified-icon">✅</div>
-      <div>
-        <div class="verified-text">Données certifiées par CHECKAR</div>
-        <div class="verified-sub">Généré le <span id="certDate">—</span></div>
+    <div id="content">
+      <div class="cert-badge">
+        <div class="cert-label">🔗 CERTIFICAT D'ENTRETIEN VÉRIFIÉ</div>
+        <div class="cert-id" id="certId">—</div>
       </div>
-    </div>
 
-    <div class="vehicle-card">
-      <div class="vehicle-name" id="vehicleName">—</div>
-      <div class="vehicle-immat" id="vehicleImmat">—</div>
-    </div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value" id="nbVerif">0</div>
-        <div class="stat-label">Vérifications</div>
+      <div class="verified">
+        <div class="verified-icon">✅</div>
+        <div>
+          <div class="verified-text">Données certifiées par CHECKAR</div>
+          <div class="verified-sub">Généré le <span id="certDate">—</span></div>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-value" id="nbInterv">0</div>
-        <div class="stat-label">Interventions</div>
-      </div>
-    </div>
 
-    <div class="section-title">🔧 HISTORIQUE DES INTERVENTIONS GARAGE</div>
-    <div id="interventions"></div>
+      <div class="vehicle-card">
+        <div class="vehicle-name" id="vehicleName">—</div>
+        <div class="vehicle-immat" id="vehicleImmat">—</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value" id="nbVerif">0</div>
+          <div class="stat-label">Vérifications</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="nbInterv">0</div>
+          <div class="stat-label">Interventions</div>
+        </div>
+      </div>
+
+      <div class="section-title">🔧 HISTORIQUE DES INTERVENTIONS GARAGE</div>
+      <div id="interventions"></div>
+    </div>
 
     <div class="footer">
       <p>Document généré par <a href="https://checkar-4a9ad.web.app">CHECKAR</a></p>
@@ -85,49 +92,89 @@
     </div>
   </div>
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const certId = params.get("id") || "—";
-    const vehicleName = params.get("v") || "Véhicule inconnu";
-    const immat = params.get("i") || "—";
-    const nbVerif = params.get("verif") || "0";
-    const nbInterv = params.get("interv") || "0";
-    const date = params.get("date") || "—";
-    let travaux = [];
-    try { travaux = JSON.parse(params.get("travaux") || "[]"); } catch(e) {}
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    document.getElementById("certId").textContent = certId;
-    document.getElementById("vehicleName").textContent = vehicleName;
-    document.getElementById("vehicleImmat").textContent = immat;
-    document.getElementById("nbVerif").textContent = nbVerif;
-    document.getElementById("nbInterv").textContent = nbInterv;
-    document.getElementById("certDate").textContent = date;
+    const firebaseConfig = {
+      apiKey:            "AIzaSyBnALwWwPaTyizMiywmKRLhXUGwXXK7x_k",
+      authDomain:        "checkar-4a9ad.firebaseapp.com",
+      projectId:         "checkar-4a9ad",
+      storageBucket:     "checkar-4a9ad.firebasestorage.app",
+      messagingSenderId: "489510743392",
+      appId:             "1:489510743392:web:7c7c0c6265911d5fd0c205"
+    };
 
-    const container = document.getElementById("interventions");
-    if (travaux.length === 0) {
-      container.innerHTML = '<div class="no-interv">Aucune intervention garage enregistrée</div>';
-    } else {
-      let total = 0;
-      travaux.forEach(t => {
-        const montant = parseFloat(t.montant) || 0;
-        total += montant;
-        container.innerHTML += `
-          <div class="intervention">
-            <div>
-              <div class="interv-desc">${t.desc || "Intervention garage"}</div>
-              <div class="interv-date">📅 ${t.date || "—"}</div>
-            </div>
-            <div class="interv-amount">${montant.toFixed(2)} €</div>
-          </div>`;
-      });
-      if (total > 0) {
-        container.innerHTML += `
-          <div class="total">
-            <div class="total-label">💰 Total interventions</div>
-            <div class="total-value">${total.toFixed(2)} €</div>
-          </div>`;
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    function esc(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function showError(msg) {
+      document.getElementById("loading").innerHTML =
+        `<div class="error">❌ ${msg}</div>`;
+    }
+
+    function render(certId, data) {
+      document.getElementById("certId").textContent      = certId;
+      document.getElementById("vehicleName").textContent  = data.vehicleName  || "—";
+      document.getElementById("vehicleImmat").textContent = data.vehicleImmat  || "—";
+      document.getElementById("nbVerif").textContent      = data.nbVerif       ?? 0;
+      document.getElementById("certDate").textContent     = data.date          || "—";
+
+      const travaux = Array.isArray(data.travaux) ? data.travaux : [];
+      document.getElementById("nbInterv").textContent = travaux.length;
+
+      const container = document.getElementById("interventions");
+      if (travaux.length === 0) {
+        container.innerHTML = '<div class="no-interv">Aucune intervention garage enregistrée</div>';
+      } else {
+        let total = 0;
+        travaux.forEach(t => {
+          const montant = parseFloat(t.montant) || 0;
+          total += montant;
+          container.innerHTML += `
+            <div class="intervention">
+              <div>
+                <div class="interv-desc">${esc(t.desc || "Intervention garage")}</div>
+                <div class="interv-date">📅 ${esc(t.date || "—")}</div>
+              </div>
+              <div class="interv-amount">${montant.toFixed(2)} €</div>
+            </div>`;
+        });
+        if (total > 0) {
+          container.innerHTML += `
+            <div class="total">
+              <div class="total-label">💰 Total interventions</div>
+              <div class="total-value">${total.toFixed(2)} €</div>
+            </div>`;
+        }
+      }
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("content").style.display = "block";
+    }
+
+    async function loadCertificat() {
+      const certId = new URLSearchParams(window.location.search).get("id");
+      if (!certId) { showError("ID de certificat manquant dans l'URL"); return; }
+
+      try {
+        const snap = await getDoc(doc(db, "certificats", certId));
+        if (!snap.exists()) { showError("Certificat introuvable"); return; }
+        render(certId, snap.data());
+      } catch (e) {
+        showError("Erreur de chargement — vérifiez votre connexion");
       }
     }
+
+    loadCertificat();
   </script>
 </body>
 </html>

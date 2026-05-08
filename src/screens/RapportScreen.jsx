@@ -1,8 +1,31 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { TYPE_LABELS } from "../config/data";
 import { C, card, btn } from "./shared";
+import { saveCertificat } from "../config/firestore";
 
 export function RapportScreen({ active, checklist, prog, docs, exportPDF, localInvoices, depenses, t = {}, isPremium = true, onShowPremium }) {
+  useEffect(() => {
+    if (!active) return;
+    const historyNow = active.history || [];
+    const depGarageNow = (depenses || []).filter(
+      d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage"
+    );
+    if (historyNow.length === 0 && depGarageNow.length === 0) return;
+    const certId = `CHK-${active.id.toString().slice(-8)}`;
+    const today = new Date().toLocaleDateString("fr-FR");
+    saveCertificat(certId, {
+      vehicleName: active.name,
+      vehicleImmat: active.immat || "",
+      nbVerif: historyNow.length,
+      date: today,
+      travaux: depGarageNow.map(d => ({
+        date: d.date,
+        desc: d.description || d.categorie,
+        montant: d.montant,
+      })),
+    });
+  }, [active, depenses]);
+
   if (!active) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}><div style={{ fontSize: 48, marginBottom: 12 }}>📊</div><div style={{ fontWeight: 600 }}>{t.choisirVehicule || "Choisis un véhicule depuis l'accueil"}</div></div>;
 
   const problems = checklist.filter(item => active.checks?.[item.id] === "PROBLEME");
@@ -72,9 +95,9 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
         const depGarage = (depenses || []).filter(d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage");
         if (history.length === 0 && depGarage.length === 0) return null;
 
-        const certId = `CHK-${active.id.toString().slice(-6)}`;
+        const certId = `CHK-${active.id.toString().slice(-8)}`;
         const todayStr = new Date().toLocaleDateString("fr-FR");
-        const publicUrl = `https://checkar-4a9ad.web.app/certificat.html?id=${certId}&v=${encodeURIComponent(active.name)}&i=${encodeURIComponent(active.immat || "")}&verif=${history.length}&interv=${depGarage.length}&date=${encodeURIComponent(todayStr)}&travaux=${encodeURIComponent(JSON.stringify(depGarage.map(d => ({ date: d.date, desc: d.description || d.categorie, montant: d.montant })).slice(-10)))}`;
+        const publicUrl = `https://checkar-4a9ad.web.app/certificat.html?id=${certId}`;
         const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`;
 
         return (

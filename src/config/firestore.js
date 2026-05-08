@@ -1,8 +1,18 @@
 import { doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
-const COL = "autocheck";
-const INV = "invitations";
+const COL  = "autocheck";
+const INV  = "invitations";
+const CERT = "certificats";
+
+// ─── Certificats d'entretien ──────────────────────────────────────
+export const saveCertificat = async (certId, data) => {
+  try {
+    await setDoc(doc(db, CERT, certId), data);
+  } catch (e) {
+    console.error("Erreur sauvegarde certificat:", e);
+  }
+};
 
 // ─── Sauvegarde / Chargement existants ───────────────────────────
 export const saveKey = async (userId, key, data) => {
