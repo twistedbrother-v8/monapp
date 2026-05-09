@@ -1,8 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { C } from "./shared";
+
+const GYRO_STYLE_ID = "gyrophare-keyframes";
+function injectGyrophareCSS() {
+  if (document.getElementById(GYRO_STYLE_ID)) return;
+  const s = document.createElement("style");
+  s.id = GYRO_STYLE_ID;
+  s.textContent = `
+    @keyframes gyro-gauche {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+    @keyframes gyro-droit {
+      0%, 100% { opacity: 0; }
+      50%       { opacity: 1; }
+    }
+    .gyro-gauche { animation: gyro-gauche 0.6s ease-in-out infinite; }
+    .gyro-droit  { animation: gyro-droit  0.6s ease-in-out infinite; }
+  `;
+  document.head.appendChild(s);
+}
 
 export function SecoursScreen({ active, setTab, docs, t = {} }) {
   const [section, setSection] = useState(() => sessionStorage.getItem("secours_section") || null);
+
+  useEffect(() => { injectGyrophareCSS(); }, []);
 
   const goSection = (s) => { sessionStorage.setItem("secours_section", s || ""); setSection(s); };
   const goBack = () => { sessionStorage.removeItem("secours_section"); setSection(null); };
@@ -56,7 +78,11 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
       {section === "accident" && (
         <div>
           <button onClick={goBack} style={{ background: C.surface, border: "none", borderRadius: 12, padding: "8px 14px", color: C.muted, cursor: "pointer", fontSize: 13, marginBottom: 16 }}>{t.retour || "← Retour"}</button>
-          <div style={{ fontSize: 16, fontWeight: 800, color: C.red, marginBottom: 14 }}>🚨 {t.procedureAccident || "Procédure accident"}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: C.red, marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="gyro-gauche">🚨</span>
+            {(t.procedureAccident || "🚨 Procédure accident").replace(/^🚨\s*/, "")}
+            <span className="gyro-droit">🚨</span>
+          </div>
 
           {[
             ["1", C.red,    t.accStep1Title || "Sécuriser la zone",      t.accStep1Desc || "Coupez le moteur. Mettez le gilet jaune AVANT de sortir du véhicule. Placez le triangle à 30m minimum."],

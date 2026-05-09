@@ -9,6 +9,7 @@ export const translations = {
     catGarage: "Garage",
     catPeage: "Péage",
     catLavage: "Lavage",
+    catContravention: "Contravention",
     // Navigation
     accueil: "Accueil",
     checklist: "Checklist",
@@ -206,6 +207,7 @@ export const translations = {
     catGarage: "Garage",
     catPeage: "Toll",
     catLavage: "Car wash",
+    catContravention: "Fine",
     // Navigation
     accueil: "Home",
     checklist: "Checklist",

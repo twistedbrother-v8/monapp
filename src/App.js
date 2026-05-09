@@ -46,6 +46,49 @@ const C = {
   red:     "#ef4444",
 };
 
+function SplashScreen({ fading }) {
+  const barRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      if (barRef.current) barRef.current.style.width = "100%";
+    });
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  return (
+    <div style={{
+      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+      background: "#0a0e1a",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center",
+      zIndex: 9999,
+      opacity: fading ? 0 : 1,
+      transition: "opacity 0.5s ease",
+      fontFamily: "-apple-system, 'SF Pro Display', sans-serif",
+    }}>
+      <div style={{ textAlign: "center", marginBottom: 48 }}>
+        <div style={{ fontSize: 72, marginBottom: 18 }}>🚗</div>
+        <div style={{ fontSize: 30, fontWeight: 900, color: "#2157FF", letterSpacing: 4 }}>CHECKAR</div>
+        <div style={{ fontSize: 13, color: "#64748b", marginTop: 8, letterSpacing: 0.5 }}>Carnet d'entretien intelligent</div>
+      </div>
+
+      <div style={{ width: "60%", height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 99, overflow: "hidden" }}>
+        <div
+          ref={barRef}
+          style={{
+            height: "100%",
+            width: "0%",
+            background: "#2157FF",
+            borderRadius: 99,
+            transition: "width 2s linear",
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { user, loading: authLoading } = useAuth();
   const userId = user?.uid ?? null;
@@ -58,11 +101,19 @@ export default function App() {
   const contentRef = React.useRef(null);
   const [deferredInstall, setDeferredInstall] = React.useState(null);
   const [notifStatus, setNotifStatus] = React.useState(Notification?.permission ?? "default");
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashFading, setSplashFading] = useState(false);
 
   React.useEffect(() => {
     const handler = (e) => { e.preventDefault(); setDeferredInstall(e); };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => setSplashFading(true), 2000);
+    const hideTimer = setTimeout(() => setShowSplash(false), 2500);
+    return () => { clearTimeout(fadeTimer); clearTimeout(hideTimer); };
   }, []);
 
   const setTab = useCallback((newTab) => {
@@ -334,6 +385,8 @@ export default function App() {
       return updated;
     });
   }, [active]);
+
+  if (showSplash) return <SplashScreen fading={splashFading} />;
 
   if (authLoading) {
     return (
