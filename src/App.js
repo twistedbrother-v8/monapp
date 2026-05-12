@@ -486,6 +486,9 @@ export default function App() {
             }} style={{ width: "100%", background: "rgba(33,87,255,0.1)", border: "1px solid rgba(33,87,255,0.3)", borderRadius: 12, padding: 14, color: C.blue, cursor: "pointer", fontWeight: 700, fontSize: 13, marginBottom: 10 }}>
               {shareCopied ? "✅ Lien copié !" : "🔗 Partager l'app"}
             </button>
+            <a href="mailto:contact@checkapp-studio.fr" style={{ display: "block", width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, color: C.muted, cursor: "pointer", fontSize: 12, fontWeight: 600, marginBottom: 10, textAlign: "center", textDecoration: "none", boxSizing: "border-box" }}>
+              ✉️ contact@checkapp-studio.fr
+            </a>
             <button onClick={() => { setShowAbout(false); setTab("cgu"); }} style={{ width: "100%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 10, color: C.muted, cursor: "pointer", fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
               📄 CGU & Politique de confidentialité
             </button>
