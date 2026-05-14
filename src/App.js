@@ -1,6 +1,7 @@
 // src/App.js
 import React, { useState, useEffect, useCallback } from "react";
 import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import { logoutUser } from "./config/firebase";
 import { useAuth } from "./hooks/useAuth";
 import { useFirestore } from "./hooks/useFirestore";
@@ -8,7 +9,7 @@ import { useVehicleManager } from "./hooks/useVehicleManager";
 import { removeSharedVehicle } from "./config/firestore";
 import { db } from "./config/firebase";
 import { getDoc, doc } from "firebase/firestore";
-import { CHECKLIST_MAP, getChecklist } from "./config/data";
+import { CHECKLIST_MAP, getChecklist, TYPE_LABELS } from "./config/data";
 import { getProgress } from "./utils/helpers";
 import { translations } from "./config/translations";
 import {
@@ -362,20 +363,139 @@ export default function App() {
     });
   }, [active, checklist]);
 
-  const exportPDF = useCallback(() => {
+  const exportPDF = useCallback(async () => {
     if (!active) return;
-    const pdfdoc = new jsPDF();
-    pdfdoc.setFontSize(20); pdfdoc.text("Carnet d'entretien", 10, 15);
-    pdfdoc.setFontSize(14); pdfdoc.text(`${active.name}${active.immat ? " • " + active.immat : ""}`, 10, 25);
-    let y = 35;
-    [...(active.history || [])].reverse().forEach(h => {
-      pdfdoc.setFontSize(12); pdfdoc.text(h.date, 10, y); y += 6;
-      (h.actions || []).forEach(a => { pdfdoc.text("- " + a.item, 12, y); y += 6; });
-      y += 5;
-      if (y > 260) { pdfdoc.addPage(); y = 20; }
-    });
-    pdfdoc.save(`carnet-${active.name}.pdf`);
-  }, [active]);
+
+    const certId  = `CHK-${active.id.toString().slice(-8).toUpperCase()}`;
+    const today   = new Date().toLocaleDateString("fr-FR");
+    const nowTime = new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    const esc     = s => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const slugify = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^\w]+/g, "-").toLowerCase();
+
+    const typeLabel = TYPE_LABELS[active.type] || "";
+    const depGarage = depenses.filter(
+      d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage"
+    );
+
+    // ── Build garage intervention rows HTML ──────────────────────────────
+    let rowIdx = 0;
+    const garageRowsHtml = depGarage.length === 0
+      ? `<tr><td colspan="4" style="padding:16px;text-align:center;font-size:11px;color:#888">Aucune intervention enregistrée</td></tr>`
+      : depGarage.map(d => {
+          const bg      = rowIdx++ % 2 === 0 ? "#ffffff" : "#f5f5f7";
+          const sep     = "border-bottom:1px solid #ebebf0";
+          const montant = (d.montant != null && d.montant !== "")
+            ? Number(d.montant).toLocaleString("fr-FR", { style: "currency", currency: "EUR" })
+            : "—";
+          const kmLabel = d.km ? Number(d.km).toLocaleString("fr-FR") + " km" : "—";
+          const rawDate = d.date || "";
+          const fmtDate = /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+            ? rawDate.split("-").reverse().join("/")
+            : rawDate;
+          return `<tr style="background:${bg}">
+            <td style="padding:6px 10px;font-size:11px;color:#888;white-space:nowrap;text-align:left;${sep}">${esc(fmtDate)}</td>
+            <td style="padding:6px 10px;font-size:11px;color:#555;text-align:center;white-space:nowrap;${sep}">${esc(kmLabel)}</td>
+            <td style="padding:6px 10px;font-size:11px;color:#1c1c1e;text-align:left;${sep}">${esc(d.description || d.categorie || "")}</td>
+            <td style="padding:6px 10px;font-size:11px;font-weight:700;color:#1a9040;text-align:right;${sep}">${montant}</td>
+          </tr>`;
+        }).join("");
+
+    // ── Build hidden HTML report div ─────────────────────────────────────
+    const html = `
+    <div style="width:794px;background:#fff;font-family:Helvetica,Arial,sans-serif;color:#1c1c1e;box-sizing:border-box">
+
+      <div style="background:#0A0A1A;padding:20px 32px 0">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px">
+          <div>
+            <div style="font-size:30px;font-weight:900;color:#fff;letter-spacing:3px">CHECKAR</div>
+            <div style="font-size:12px;color:#a0a0bb;margin-top:5px">Certificat d'entretien véhicule</div>
+            <div style="font-size:10px;color:#6666aa;margin-top:3px">Généré le ${today} à ${nowTime}</div>
+          </div>
+          <div style="text-align:right;padding-top:8px">
+            <div style="font-size:12px;font-weight:700;color:#5566cc;font-family:monospace">${certId}</div>
+          </div>
+        </div>
+        <div style="height:3px;background:#2157FF;margin:0 -32px"></div>
+      </div>
+
+      <div style="padding:22px 32px 0">
+        <div style="font-size:24px;font-weight:900;color:#1c1c1e">${esc(active.name)}</div>
+        <div style="font-size:12px;color:#888;margin-top:6px">
+          ${active.immat ? `<span style="background:#f0f0f5;border-radius:4px;padding:2px 8px;margin-right:8px;font-weight:600">${esc(active.immat)}</span>` : ""}
+          ${esc(typeLabel)}
+        </div>
+        <div style="height:1px;background:#e0e0e8;margin:16px 0 0"></div>
+      </div>
+
+      <div style="padding:0 32px 20px">
+        <div style="font-size:9px;font-weight:800;color:#999;letter-spacing:1.5px;margin-bottom:8px">INTERVENTIONS GARAGE</div>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e0e0e8">
+          <thead>
+            <tr style="background:#eeeeF5">
+              <th style="padding:7px 10px;font-size:10px;font-weight:700;color:#666;text-align:left;width:80px">DATE</th>
+              <th style="padding:7px 10px;font-size:10px;font-weight:700;color:#666;text-align:center;width:70px">KM</th>
+              <th style="padding:7px 10px;font-size:10px;font-weight:700;color:#666;text-align:left">DESCRIPTION</th>
+              <th style="padding:7px 10px;font-size:10px;font-weight:700;color:#666;text-align:right;width:90px">MONTANT</th>
+            </tr>
+          </thead>
+          <tbody>${garageRowsHtml}</tbody>
+        </table>
+      </div>
+
+      <div style="margin:4px 32px 20px;border:2px solid #1a9040;border-radius:10px;padding:16px 20px;text-align:center">
+        <div style="font-size:16px;font-weight:900;color:#1a9040;letter-spacing:1.5px">✓  CERTIFIÉ CHECKAR</div>
+        <div style="font-size:10px;color:#5a9a6a;margin-top:7px">${certId}  ·  ${today} à ${nowTime}</div>
+      </div>
+
+      <div style="padding:12px 32px 28px;border-top:1px solid #ebebf0;text-align:center">
+        <div style="font-size:10px;color:#aaa">Généré par <b style="color:#2157FF">CHECKAR</b> · Carnet d'entretien intelligent</div>
+      </div>
+
+    </div>`;
+
+    // ── Mount off-screen, capture, slice into pages ──────────────────────
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = "position:absolute;left:-9999px;top:0;";
+    wrapper.innerHTML = html;
+    document.body.appendChild(wrapper);
+
+    try {
+      const canvas = await html2canvas(wrapper.firstElementChild, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      const PDF_W = 210;
+      const PDF_H = 297;
+      const mmPerPx   = PDF_W / canvas.width;
+      const pageH_px  = Math.floor(PDF_H / mmPerPx);
+
+      const pdfdoc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+
+      let srcY = 0;
+      let page = 0;
+      while (srcY < canvas.height) {
+        const sliceH = Math.min(pageH_px, canvas.height - srcY);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width  = canvas.width;
+        pageCanvas.height = pageH_px;
+        const ctx = pageCanvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, pageH_px);
+        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+        if (page > 0) pdfdoc.addPage();
+        pdfdoc.addImage(pageCanvas.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, PDF_W, PDF_H);
+        srcY += pageH_px;
+        page++;
+      }
+
+      pdfdoc.save(`checkar-${slugify(active.name)}-${today.split("/").join("-")}.pdf`);
+    } finally {
+      document.body.removeChild(wrapper);
+    }
+  }, [active, depenses]);
 
   const handleSaveGarage = useCallback((info) => {
     if (!active) return;

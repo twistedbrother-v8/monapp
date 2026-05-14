@@ -1,180 +1,291 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Certificat d'entretien — CHECKAR</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certificat d entretien — CHECKAR</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0a0a0a; color: #fff; font-family: -apple-system, 'SF Pro Display', sans-serif; min-height: 100vh; }
-    .header { background: linear-gradient(135deg, #0a1a0a, #1a2a1a); border-bottom: 2px solid #22ff0033; padding: 24px 20px; text-align: center; }
-    .logo { font-size: 32px; margin-bottom: 8px; }
-    .app-name { font-size: 24px; font-weight: 900; color: #22ff00; letter-spacing: 2px; }
-    .subtitle { font-size: 12px; color: #888; margin-top: 4px; }
-    .container { max-width: 480px; margin: 0 auto; padding: 20px 16px; }
-    .cert-badge { background: linear-gradient(135deg, #1a2a1a, #0a1a0a); border: 2px solid #22ff0044; border-radius: 16px; padding: 16px; margin-bottom: 20px; text-align: center; }
-    .cert-label { font-size: 10px; color: #888; letter-spacing: 2px; font-weight: 800; margin-bottom: 6px; }
-    .cert-id { font-size: 14px; font-weight: 900; color: #22ff00; font-family: monospace; letter-spacing: 2px; }
-    .vehicle-card { background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-    .vehicle-name { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 4px; }
-    .vehicle-immat { font-size: 14px; color: #2157FF; font-weight: 700; background: rgba(33,87,255,0.15); display: inline-block; padding: 4px 12px; border-radius: 8px; margin-top: 6px; letter-spacing: 2px; }
-    .stats { display: flex; gap: 10px; margin-bottom: 20px; }
-    .stat { flex: 1; background: #1a1a1a; border-radius: 12px; padding: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.08); }
-    .stat-value { font-size: 28px; font-weight: 900; color: #22ff00; }
-    .stat-label { font-size: 11px; color: #888; margin-top: 4px; }
-    .section-title { font-size: 11px; font-weight: 800; color: #888; letter-spacing: 1px; margin-bottom: 10px; margin-top: 20px; }
-    .intervention { background: #1a1a1a; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .interv-desc { font-size: 14px; font-weight: 700; color: #fff; }
-    .interv-date { font-size: 11px; color: #888; margin-top: 3px; }
-    .interv-amount { font-size: 16px; font-weight: 900; color: #ffb133; }
-    .no-interv { text-align: center; color: #888; padding: 30px; font-size: 14px; }
-    .footer { text-align: center; padding: 30px 20px; color: #555; font-size: 11px; line-height: 1.8; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+    }
+    .header {
+      background: #0A0A1A;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .logo { font-size: 22px; font-weight: 900; letter-spacing: 2px; color: #ffffff; }
+    .logo span { color: #2157FF; }
+    .badge {
+      background: rgba(33,87,255,0.15);
+      border: 1px solid rgba(33,87,255,0.4);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #2157FF;
+      letter-spacing: 0.5px;
+    }
+    .container { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+    .card {
+      background: #3A3A40;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .cert-block {
+      background: linear-gradient(135deg, #1a2a1a, #0a1a0a);
+      border: 2px solid rgba(34,255,0,0.27);
+      border-radius: 20px;
+      padding: 24px 20px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .cert-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #22ff00;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .cert-sub {
+      font-size: 10px;
+      color: #8e8e93;
+      margin-bottom: 20px;
+    }
+    .cert-id {
+      background: rgba(0,0,0,0.4);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+    }
+    .cert-id-label { font-size: 10px; color: #8e8e93; margin-bottom: 4px; }
+    .cert-id-value {
+      font-size: 14px;
+      font-weight: 900;
+      color: #22ff00;
+      letter-spacing: 2px;
+      font-family: monospace;
+    }
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 16px;
+    }
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 26px; font-weight: 900; color: #22ff00; }
+    .stat-label { font-size: 10px; color: #8e8e93; margin-top: 2px; }
+    .divider { width: 1px; background: rgba(34,255,0,0.13); }
+    .vehicle-name { font-weight: 900; font-size: 22px; color: #ffffff; margin-bottom: 6px; }
+    .vehicle-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+    .immat {
+      background: rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-weight: 700;
+      font-size: 13px;
+      color: #ffffff;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #aeaeb2;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+    .travail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+    }
+    .travail-row + .travail-row { border-top: 1px solid rgba(255,255,255,0.08); }
+    .travail-date { font-size: 11px; color: #8e8e93; margin-bottom: 3px; }
+    .travail-desc { font-size: 14px; font-weight: 600; color: #ffffff; }
+    .travail-montant { font-size: 14px; font-weight: 800; color: #89fc68; }
+    .empty { font-size: 13px; color: #8e8e93; text-align: center; padding: 20px 0; }
+    .stamp {
+      background: rgba(34,255,0,0.06);
+      border: 2px solid rgba(34,255,0,0.4);
+      border-radius: 14px;
+      padding: 16px;
+      text-align: center;
+      margin-top: 4px;
+      margin-bottom: 20px;
+    }
+    .stamp-title { font-size: 13px; font-weight: 900; color: #22ff00; letter-spacing: 1px; margin-bottom: 4px; }
+    .stamp-date { font-size: 12px; color: #aeaeb2; }
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 16px;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #2157FF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box {
+      background: rgba(252,63,53,0.08);
+      border: 1px solid rgba(252,63,53,0.3);
+      border-radius: 14px;
+      padding: 24px;
+      text-align: center;
+      margin: 40px 16px;
+    }
+    .error-icon { font-size: 40px; margin-bottom: 12px; }
+    .error-msg { font-size: 15px; color: #fc3f35; font-weight: 700; }
+    .error-sub { font-size: 13px; color: #8e8e93; margin-top: 8px; }
+    .footer {
+      text-align: center;
+      padding: 20px 0 0;
+      font-size: 11px;
+      color: #8e8e93;
+      line-height: 1.8;
+    }
     .footer a { color: #2157FF; text-decoration: none; }
-    .verified { background: rgba(34,255,0,0.1); border: 1px solid #22ff0033; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-    .verified-icon { font-size: 24px; }
-    .verified-text { font-size: 12px; color: #22ff00; font-weight: 700; }
-    .verified-sub { font-size: 11px; color: #888; margin-top: 2px; }
-    .total { background: rgba(255,177,51,0.1); border: 1px solid rgba(255,177,51,0.3); border-radius: 12px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-    .total-label { font-size: 13px; color: #888; font-weight: 700; }
-    .total-value { font-size: 20px; font-weight: 900; color: #ffb133; }
-    #loading { text-align: center; padding: 60px 20px; color: #888; font-size: 14px; }
-    #content { display: none; }
-    .error { text-align: center; padding: 40px 20px; color: #ef4444; font-size: 14px; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo">🚗</div>
-    <div class="app-name">CHECKAR</div>
-    <div class="subtitle">Carnet d'entretien certifié</div>
+
+<div class="header">
+  <div class="logo">CHECK<span>AR</span></div>
+  <div class="badge">CERTIFICAT VERIFIE</div>
+</div>
+
+<div id="root">
+  <div class="loading">
+    <div class="spinner"></div>
+    <div style="color:#8e8e93;font-size:14px;">Chargement du certificat...</div>
   </div>
+</div>
 
-  <div class="container">
-    <div id="loading">⏳ Chargement du certificat...</div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <div id="content">
-      <div class="cert-badge">
-        <div class="cert-label">🔗 CERTIFICAT D'ENTRETIEN VÉRIFIÉ</div>
-        <div class="cert-id" id="certId">—</div>
-      </div>
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBnALwWwPaTyizMiywmKRLhXUGwXXK7x_k",
+    authDomain:        "checkar-4a9ad.firebaseapp.com",
+    projectId:         "checkar-4a9ad",
+    storageBucket:     "checkar-4a9ad.firebasestorage.app",
+    messagingSenderId: "489510743392",
+    appId:             "1:489510743392:web:7c7c0c6265911d5fd0c205",
+  };
 
-      <div class="verified">
-        <div class="verified-icon">✅</div>
-        <div>
-          <div class="verified-text">Données certifiées par CHECKAR</div>
-          <div class="verified-sub">Généré le <span id="certDate">—</span></div>
-        </div>
-      </div>
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
 
-      <div class="vehicle-card">
-        <div class="vehicle-name" id="vehicleName">—</div>
-        <div class="vehicle-immat" id="vehicleImmat">—</div>
-      </div>
+  function esc(s) {
+    return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
 
-      <div class="stats">
-        <div class="stat">
-          <div class="stat-value" id="nbVerif">0</div>
-          <div class="stat-label">Vérifications</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value" id="nbInterv">0</div>
-          <div class="stat-label">Interventions</div>
-        </div>
-      </div>
+  function formatMontant(m) {
+    if (!m && m !== 0) return "";
+    return Number(m).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  }
 
-      <div class="section-title">🔧 HISTORIQUE DES INTERVENTIONS GARAGE</div>
-      <div id="interventions"></div>
-    </div>
+  function render(data, certId) {
+    const travaux = data.travaux || [];
+    const travauxHTML = travaux.length === 0
+      ? '<div class="empty">Aucune intervention enregistree</div>'
+      : travaux.map(t =>
+          '<div class="travail-row">' +
+            '<div>' +
+              '<div class="travail-date">' + esc(t.date) + '</div>' +
+              '<div class="travail-desc">' + esc(t.desc) + '</div>' +
+            '</div>' +
+            '<div class="travail-montant">' + formatMontant(t.montant) + '</div>' +
+          '</div>'
+        ).join("");
 
-    <div class="footer">
-      <p>Document généré par <a href="https://checkar-4a9ad.web.app">CHECKAR</a></p>
-      <p>Carnet d'entretien numérique · Bientôt sur Blockchain</p>
-    </div>
-  </div>
+    document.getElementById("root").innerHTML =
+      '<div class="container">' +
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        '<div class="cert-block">' +
+          '<div class="cert-title">&#128279; CERTIFICAT D&apos;ENTRETIEN</div>' +
+          '<div class="cert-sub">Powered by CHECKAR &mdash; Bientot sur Blockchain</div>' +
+          '<div class="cert-id">' +
+            '<div class="cert-id-label">ID CERTIFICAT</div>' +
+            '<div class="cert-id-value">' + esc(certId) + '</div>' +
+          '</div>' +
+          '<div class="stats-row">' +
+            '<div class="stat-item">' +
+              '<div class="stat-value">' + travaux.length + '</div>' +
+              '<div class="stat-label">Interventions garage</div>' +
+            '</div>' +
+            '<div class="divider"></div>' +
+            '<div class="stat-item">' +
+              '<div class="stat-value" style="font-size:14px;margin-top:4px">' + esc(data.date) + '</div>' +
+              '<div class="stat-label">Genere le</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
 
-    const firebaseConfig = {
-      apiKey:            "AIzaSyBnALwWwPaTyizMiywmKRLhXUGwXXK7x_k",
-      authDomain:        "checkar-4a9ad.firebaseapp.com",
-      projectId:         "checkar-4a9ad",
-      storageBucket:     "checkar-4a9ad.firebasestorage.app",
-      messagingSenderId: "489510743392",
-      appId:             "1:489510743392:web:7c7c0c6265911d5fd0c205"
-    };
+        '<div class="card">' +
+          '<div class="vehicle-name">' + esc(data.vehicleName) + '</div>' +
+          (data.vehicleImmat ? '<div class="vehicle-meta"><span class="immat">' + esc(data.vehicleImmat) + '</span></div>' : '') +
+        '</div>' +
 
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+        (travaux.length > 0
+          ? '<div class="card"><div class="section-title">&#128295; INTERVENTIONS GARAGE</div>' + travauxHTML + '</div>'
+          : '') +
 
-    function esc(str) {
-      return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-    }
+        '<div class="stamp">' +
+          '<div class="stamp-title">&#10003; CERTIFIE CHECKAR</div>' +
+          '<div class="stamp-date">Document genere le ' + esc(data.date) + '</div>' +
+        '</div>' +
 
-    function showError(msg) {
-      document.getElementById("loading").innerHTML =
-        `<div class="error">❌ ${msg}</div>`;
-    }
+        '<div class="footer">' +
+          'Certificat authentifie par <a href="https://checkar-4a9ad.web.app">CHECKAR</a><br>' +
+          'ID : ' + esc(certId) +
+        '</div>' +
 
-    function render(certId, data) {
-      document.getElementById("certId").textContent      = certId;
-      document.getElementById("vehicleName").textContent  = data.vehicleName  || "—";
-      document.getElementById("vehicleImmat").textContent = data.vehicleImmat  || "—";
-      document.getElementById("nbVerif").textContent      = data.nbVerif       ?? 0;
-      document.getElementById("certDate").textContent     = data.date          || "—";
+      '</div>';
+  }
 
-      const travaux = Array.isArray(data.travaux) ? data.travaux : [];
-      document.getElementById("nbInterv").textContent = travaux.length;
+  function renderError(msg) {
+    document.getElementById("root").innerHTML =
+      '<div class="error-box">' +
+        '<div class="error-icon">&#128269;</div>' +
+        '<div class="error-msg">' + esc(msg) + '</div>' +
+        '<div class="error-sub">Verifiez que le lien est correct ou contactez le proprietaire du vehicule.</div>' +
+      '</div>';
+  }
 
-      const container = document.getElementById("interventions");
-      if (travaux.length === 0) {
-        container.innerHTML = '<div class="no-interv">Aucune intervention garage enregistrée</div>';
-      } else {
-        let total = 0;
-        travaux.forEach(t => {
-          const montant = parseFloat(t.montant) || 0;
-          total += montant;
-          container.innerHTML += `
-            <div class="intervention">
-              <div>
-                <div class="interv-desc">${esc(t.desc || "Intervention garage")}</div>
-                <div class="interv-date">📅 ${esc(t.date || "—")}</div>
-              </div>
-              <div class="interv-amount">${montant.toFixed(2)} €</div>
-            </div>`;
-        });
-        if (total > 0) {
-          container.innerHTML += `
-            <div class="total">
-              <div class="total-label">💰 Total interventions</div>
-              <div class="total-value">${total.toFixed(2)} €</div>
-            </div>`;
+  const certId = new URLSearchParams(window.location.search).get("id");
+
+  if (!certId) {
+    renderError("Aucun identifiant de certificat fourni.");
+  } else {
+    document.title = "Certificat " + certId + " — CHECKAR";
+    getDoc(doc(db, "certificats", certId))
+      .then(snap => {
+        if (!snap.exists()) {
+          renderError("Certificat introuvable.");
+        } else {
+          render(snap.data(), certId);
         }
-      }
+      })
+      .catch(err => {
+        console.error(err);
+        renderError("Erreur lors du chargement du certificat.");
+      });
+  }
+</script>
 
-      document.getElementById("loading").style.display = "none";
-      document.getElementById("content").style.display = "block";
-    }
-
-    async function loadCertificat() {
-      const certId = new URLSearchParams(window.location.search).get("id");
-      if (!certId) { showError("ID de certificat manquant dans l'URL"); return; }
-
-      try {
-        const snap = await getDoc(doc(db, "certificats", certId));
-        if (!snap.exists()) { showError("Certificat introuvable"); return; }
-        render(certId, snap.data());
-      } catch (e) {
-        showError("Erreur de chargement — vérifiez votre connexion");
-      }
-    }
-
-    loadCertificat();
-  </script>
 </body>
 </html>
