@@ -72,6 +72,50 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
             </div>
             <span style={{ color: C.muted, fontSize: 20 }}>›</span>
           </button>
+
+          {/* APPEL RAPIDE */}
+          <div style={{ marginTop: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, letterSpacing: 1, marginBottom: 10 }}>
+              {t.appelRapide || "APPEL RAPIDE"}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+              {[
+                { num: "15", label: "SAMU" },
+                { num: "18", label: "Pompiers" },
+                { num: "17", label: "Police" },
+                { num: "112", label: "Europe" },
+              ].map(({ num, label }) => (
+                <a key={num} href={`tel:${num}`} style={{ background: "#5c0000", borderRadius: 14, padding: "14px 10px", textAlign: "center", textDecoration: "none", display: "block" }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: "#ff2222", lineHeight: 1 }}>{num}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "white", marginTop: 4 }}>{label}</div>
+                </a>
+              ))}
+            </div>
+
+            {(() => {
+              const assDoc = docs?.filter(d => d.type === "assurance" && d.vehicleId === active?.id && d.tel);
+              if (!assDoc || assDoc.length === 0) return (
+                <button disabled style={{ background: "#1a3a1a", border: "1px solid #2d5a2d", borderRadius: 14, padding: "14px 16px", width: "100%", cursor: "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+                  <span style={{ fontSize: 20 }}>🛡️</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#4d7a4d" }}>
+                    {t.assurance || "Assurance"} — {t.pasNumeroAssurance || "non renseignée"}
+                  </span>
+                </button>
+              );
+              return assDoc.map(d => (
+                <a key={d.id} href={`tel:${d.tel.replace(/\s/g, "")}`} style={{ background: "#1a4a1a", border: "1px solid #2d7a2d", borderRadius: 14, padding: "14px 16px", width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", textDecoration: "none", boxSizing: "border-box", marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 20 }}>🛡️</span>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>{d.org || t.assurance || "Assurance"}</div>
+                      <div style={{ fontSize: 15, fontWeight: 900, color: "white", marginTop: 1 }}>{d.tel}</div>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 22 }}>📞</span>
+                </a>
+              ));
+            })()}
+          </div>
         </div>
       )}
 

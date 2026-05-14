@@ -138,6 +138,7 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
   const [confirmId, setConfirmId] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanPhoto, setScanPhoto] = useState(null);
+  const [kilometrage, setKilometrage] = useState("");
 
   const scanFacture = async (photoData) => {
     setScanning(true);
@@ -189,13 +190,12 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
   const kmMois     = carbMois.length >= 2 ? carbMois[carbMois.length-1].km - carbMois[0].km : 0;
   const CAT_ICONS  = { [t.catFinancement||"Financement"]: "🏦", [t.catAssurance||"Assurance"]: "🛡️", [t.catControle||"Contrôle technique"]: "🚗", [t.catGarage||"Garage"]: "🔧", [t.catPeage||"Péage"]: "🛣️", [t.catLavage||"Lavage"]: "🚿", [t.catContravention||"Contravention"]: "🚔" };
   const CATEGORIES = [t.catFinancement||"Financement", t.catAssurance||"Assurance", t.catControle||"Contrôle technique", t.catGarage||"Garage", t.catPeage||"Péage", t.catLavage||"Lavage", t.catContravention||"Contravention"];
-  const KM_CATEGORIES = new Set([t.catGarage || "Garage", t.catControle || "Contrôle technique"]);
   const tabStyle   = (on) => ({ flex: 1, padding: "10px 0", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "all 0.2s", background: on ? C.green : C.blue, color: on ? "#000" : "white", boxShadow: on ? `0 2px 12px ${C.green}44` : `0 2px 8px ${C.blue}44` });
 
   const addDepense = () => {
     if (sousOnglet === "general") {
       if (!form.montant || !form.date) return;
-      setDepenses(p => [...p, { id: Date.now(), type: "general", date: form.date, montant: form.montant, categorie: form.categorie, description: form.description, km: form.km || "", vehicleId: active.id, vehicleName: active.name }]);
+      setDepenses(p => [...p, { id: Date.now(), type: "general", date: form.date, montant: form.montant, categorie: form.categorie, description: form.description, km: kilometrage, vehicleId: active.id, vehicleName: active.name }]);
     } else {
       if (!form.prixCarburant || !form.date || !form.km) return;
       setDepenses(p => [...p, { id: Date.now(), type: "carburant", date: form.date, montant: form.prixCarburant, km: form.km, litres: form.litres, vehicleId: active.id, vehicleName: active.name }]);
@@ -209,6 +209,7 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
       }
     }
     setForm({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "" });
+    setKilometrage("");
     setShowForm(false);
   };
 
@@ -290,13 +291,24 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
               <select style={input} value={form.categorie} onChange={e => setForm(f => ({ ...f, categorie: e.target.value }))}>{CATEGORIES.map(c => <option key={c} value={c}>{CAT_ICONS[c]} {c}</option>)}</select>
               <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.montant || "MONTANT (€)"}</div>
               <input type="number" style={input} placeholder="Ex: 150.00" value={form.montant} onChange={e => setForm(f => ({ ...f, montant: e.target.value }))} />
-              {KM_CATEGORIES.has(form.categorie) && (
-                <>
+              {(form.categorie === "Garage" || form.categorie === "Contrôle technique") && (
+                <div>
                   <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>KILOMÉTRAGE AU COMPTEUR</div>
-                  <input type="number" style={input} placeholder="Ex: 85000" value={form.km} onChange={e => setForm(f => ({ ...f, km: e.target.value }))} />
-                </>
+                  <input
+                    type="number"
+                    style={{ ...input, marginBottom: 10 }}
+                    placeholder="Kilométrage au compteur (km)"
+                    value={kilometrage}
+                    onChange={e => setKilometrage(e.target.value)}
+                  />
+                </div>
               )}
-              {form.categorie === (t.catGarage || "Garage") && (<><div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.description || "DESCRIPTION"}</div><input style={input} placeholder="Ex: Vidange + filtre huile" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} /></>)}
+              {form.categorie === (t.catGarage || "Garage") && (
+                <div>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.description || "DESCRIPTION"}</div>
+                  <input style={{ ...input, marginBottom: 10 }} placeholder="Ex: Vidange + filtre huile" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+              )}
               <button style={btn({ opacity: form.montant && form.date && (form.categorie !== "Garage" || form.description) ? 1 : 0.5 })} onClick={addDepense}>{t.enregistrerDepense || "✅ Enregistrer"}</button>
             </div>
           )}
