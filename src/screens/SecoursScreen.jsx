@@ -107,7 +107,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontSize: 20 }}>🛡️</span>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>{d.org || t.assurance || "Assurance"}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>{t.assurance || "Assurance"}</div>
                       <div style={{ fontSize: 15, fontWeight: 900, color: "white", marginTop: 1 }}>{d.tel}</div>
                     </div>
                   </div>
@@ -160,7 +160,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
               );
               return assDoc.map(d => (
                 <a key={d.id} href={`tel:${d.tel.replace(/\s/g, "")}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.06)", textDecoration: "none" }}>
-                  <span style={{ fontSize: 13, color: C.green, fontWeight: 600 }}>🛡️ {d.org || "Assurance"}</span>
+                  <span style={{ fontSize: 13, color: C.green, fontWeight: 600 }}>🛡️ {t.assurance || "Assurance"}</span>
                   <span style={{ fontSize: 16, fontWeight: 900, color: C.green }}>📞 {d.tel}</span>
                 </a>
               ));
