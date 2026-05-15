@@ -47,12 +47,12 @@ export default function CGUScreen({ onClose, onBack, showPrivacy }) {
         {tab === "cgu" && (
           <div>
             <div style={{ fontSize: 18, fontWeight: 900, color: C.blue, marginBottom: 4 }}>Conditions Générales d'Utilisation</div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>GarageBot — Dernière mise à jour : 2026</div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>CHECKAR — Dernière mise à jour : 2026</div>
 
             {[
               {
                 titre: "1. Présentation",
-                texte: "GarageBot est une application gratuite de gestion et d'entretien de véhicules. Elle permet à l'utilisateur de suivre l'état de ses véhicules, gérer ses documents, ses dépenses et d'accéder à des informations utiles en cas d'urgence.",
+                texte: "CHECKAR est une application gratuite de gestion et d'entretien de véhicules. Elle permet à l'utilisateur de suivre l'état de ses véhicules, gérer ses documents, ses dépenses et d'accéder à des informations utiles en cas d'urgence.",
               },
               {
                 titre: "2. Accès au service",
@@ -60,23 +60,23 @@ export default function CGUScreen({ onClose, onBack, showPrivacy }) {
               },
               {
                 titre: "3. Utilisation du service",
-                texte: "L'utilisateur s'engage à utiliser l'application de manière loyale et conforme à sa destination. Il est interdit d'utiliser le service à des fins illicites, frauduleuses ou contraires aux bonnes mœurs. GarageBot se réserve le droit de suspendre un compte en cas d'utilisation abusive.",
+                texte: "L'utilisateur s'engage à utiliser l'application de manière loyale et conforme à sa destination. Il est interdit d'utiliser le service à des fins illicites, frauduleuses ou contraires aux bonnes mœurs. CHECKAR se réserve le droit de suspendre un compte en cas d'utilisation abusive.",
               },
               {
                 titre: "4. Responsabilité",
-                texte: "Les informations fournies par l'application (procédures d'urgence, guide constat, état du véhicule) sont données à titre indicatif. GarageBot ne saurait être tenu responsable des décisions prises par l'utilisateur sur la base de ces informations. En cas d'urgence, contactez toujours les services officiels (15, 17, 18, 112).",
+                texte: "Les informations fournies par l'application (procédures d'urgence, guide constat, état du véhicule) sont données à titre indicatif. CHECKAR ne saurait être tenu responsable des décisions prises par l'utilisateur sur la base de ces informations. En cas d'urgence, contactez toujours les services officiels (15, 17, 18, 112).",
               },
               {
                 titre: "5. Propriété intellectuelle",
-                texte: "L'application GarageBot, son code, son design et son contenu sont protégés par les droits de propriété intellectuelle. Toute reproduction, modification ou distribution sans autorisation est interdite.",
+                texte: "L'application CHECKAR, son code, son design et son contenu sont protégés par les droits de propriété intellectuelle. Toute reproduction, modification ou distribution sans autorisation est interdite.",
               },
               {
                 titre: "6. Disponibilité",
-                texte: "GarageBot s'efforce d'assurer la disponibilité du service 24h/24 et 7j/7. Cependant, des interruptions peuvent survenir pour maintenance ou en cas de force majeure. Aucune indemnisation ne pourra être réclamée pour ces interruptions.",
+                texte: "CHECKAR s'efforce d'assurer la disponibilité du service 24h/24 et 7j/7. Cependant, des interruptions peuvent survenir pour maintenance ou en cas de force majeure. Aucune indemnisation ne pourra être réclamée pour ces interruptions.",
               },
               {
                 titre: "7. Modification des CGU",
-                texte: "GarageBot se réserve le droit de modifier les présentes CGU à tout moment. L'utilisateur sera informé des modifications significatives. La poursuite de l'utilisation du service vaut acceptation des nouvelles conditions.",
+                texte: "CHECKAR se réserve le droit de modifier les présentes CGU à tout moment. L'utilisateur sera informé des modifications significatives. La poursuite de l'utilisation du service vaut acceptation des nouvelles conditions.",
               },
               {
                 titre: "8. Droit applicable",
@@ -95,12 +95,12 @@ export default function CGUScreen({ onClose, onBack, showPrivacy }) {
         {tab === "confidentialite" && (
           <div>
             <div style={{ fontSize: 18, fontWeight: 900, color: C.blue, marginBottom: 4 }}>Politique de Confidentialité</div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>GarageBot — Conforme au RGPD — 2026</div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>CHECKAR — Conforme au RGPD — 2026</div>
 
             {[
               {
                 titre: "1. Données collectées",
-                texte: "GarageBot collecte uniquement les données nécessaires au fonctionnement du service : adresse email (pour la connexion), données véhicules (nom, immatriculation, type), documents (assurance, contrôle technique, garage), dépenses et historique d'entretien. Aucune donnée bancaire n'est collectée.",
+                texte: "CHECKAR collecte uniquement les données nécessaires au fonctionnement du service : adresse email (pour la connexion), données véhicules (nom, immatriculation, type), documents (assurance, contrôle technique, garage), dépenses et historique d'entretien. Aucune donnée bancaire n'est collectée.",
               },
               {
                 titre: "2. Finalité de la collecte",
@@ -120,7 +120,7 @@ export default function CGUScreen({ onClose, onBack, showPrivacy }) {
               },
               {
                 titre: "6. Cookies",
-                texte: "GarageBot n'utilise pas de cookies publicitaires ou de tracking. Seuls des cookies techniques nécessaires au fonctionnement de l'authentification sont utilisés.",
+                texte: "CHECKAR n'utilise pas de cookies publicitaires ou de tracking. Seuls des cookies techniques nécessaires au fonctionnement de l'authentification sont utilisés.",
               },
               {
                 titre: "7. Sécurité",
