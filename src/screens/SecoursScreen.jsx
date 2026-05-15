@@ -38,7 +38,8 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
   return (
     <div style={{ padding: 16, background: C.bg, minHeight: "100vh" }}>
 
-      <div style={{ background: "linear-gradient(135deg, #cc0000, #ff1a1a)", borderRadius: 18, padding: "20px 16px", marginBottom: 16, textAlign: "center" }}>
+      <div style={{ position: "relative", background: "linear-gradient(135deg, #cc0000, #ff1a1a)", borderRadius: 18, padding: "20px 16px", marginBottom: 16, textAlign: "center" }}>
+        <button onClick={() => setTab("accueil")} style={{ position: "absolute", top: 10, right: 10, width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.25)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, color: "white", fontWeight: 900, lineHeight: 1 }}>✕</button>
         <div style={{ fontSize: 40, marginBottom: 8 }}>🆘</div>
         <div style={{ fontSize: 20, fontWeight: 900, color: "white" }}>{t.boutonSecours || 'BOUTON DE SECOURS'}</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 4 }}>{t.resteCalme || 'Reste calme, on est là. 👊'}</div>
@@ -81,9 +82,9 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
               {[
                 { num: "15", label: "SAMU" },
-                { num: "18", label: "Pompiers" },
-                { num: "17", label: "Police" },
-                { num: "112", label: "Europe" },
+                { num: "18", label: t.pompiers || "Pompiers" },
+                { num: "17", label: t.police || "Police" },
+                { num: "112", label: t.europe || "Europe" },
               ].map(({ num, label }) => (
                 <a key={num} href={`tel:${num}`} style={{ background: "#5c0000", borderRadius: 14, padding: "14px 10px", textAlign: "center", textDecoration: "none", display: "block" }}>
                   <div style={{ fontSize: 26, fontWeight: 900, color: "#ff2222", lineHeight: 1 }}>{num}</div>
@@ -98,7 +99,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
                 <button disabled style={{ background: "#1a3a1a", border: "1px solid #2d5a2d", borderRadius: 14, padding: "14px 16px", width: "100%", cursor: "default", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
                   <span style={{ fontSize: 20 }}>🛡️</span>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#4d7a4d" }}>
-                    {t.assurance || "Assurance"} — {t.pasNumeroAssurance || "non renseignée"}
+                    {t.assuranceLabel || "Assurance"} — {t.pasNumeroAssurance || "non renseignée"}
                   </span>
                 </button>
               );
@@ -107,7 +108,7 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={{ fontSize: 20 }}>🛡️</span>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>{t.assurance || "Assurance"}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: C.green }}>{t.assuranceLabel || "Assurance"}</div>
                       <div style={{ fontSize: 15, fontWeight: 900, color: "white", marginTop: 1 }}>{d.tel}</div>
                     </div>
                   </div>
@@ -142,30 +143,6 @@ export function SecoursScreen({ active, setTab, docs, t = {} }) {
               </div>
             </div>
           ))}
-
-          <div style={{ background: C.surface, borderRadius: 16, padding: 16, marginTop: 6 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: C.muted, letterSpacing: 1, marginBottom: 12 }}>{t.numerosUrgence || "NUMÉROS D'URGENCE"}</div>
-            {[["🚑 SAMU", "15"], ["🚒 Pompiers", "18"], ["👮 Police", "17"], ["🌍 Européen", "112"]].map(([label, num]) => (
-              <a key={num} href={`tel:${num}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)", textDecoration: "none" }}>
-                <span style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{label}</span>
-                <span style={{ fontSize: 16, fontWeight: 900, color: C.red }}>📞 {num}</span>
-              </a>
-            ))}
-            {(() => {
-              const assDoc = docs.filter(d => d.type === "assurance" && d.vehicleId === active?.id && d.tel);
-              if (assDoc.length === 0) return (
-                <div style={{ padding: "10px 0", fontSize: 12, color: C.muted, fontStyle: "italic" }}>
-                  {t.pasNumeroAssurance || "📋 Pas de numéro d'assurance enregistré"}
-                </div>
-              );
-              return assDoc.map(d => (
-                <a key={d.id} href={`tel:${d.tel.replace(/\s/g, "")}`} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.06)", textDecoration: "none" }}>
-                  <span style={{ fontSize: 13, color: C.green, fontWeight: 600 }}>🛡️ {t.assurance || "Assurance"}</span>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: C.green }}>📞 {d.tel}</span>
-                </a>
-              ));
-            })()}
-          </div>
         </div>
       )}
 
