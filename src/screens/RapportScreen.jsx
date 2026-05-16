@@ -5,19 +5,22 @@ import { C, card, btn } from "./shared";
 import { saveCertificat } from "../config/firestore";
 
 export function RapportScreen({ active, checklist, prog, docs, exportPDF, localInvoices, depenses, t = {}, isPremium = true, onShowPremium }) {
+  const certId    = active ? `CHK-${active.id.toString().slice(-8).toUpperCase()}` : null;
+  const publicUrl = certId ? `https://checkar.checkapp-studio.fr/certificat.html?id=${certId}` : null;
+
   useEffect(() => {
-    if (!active) return;
+    if (!active || !certId) return;
     const depGarageNow = (depenses || []).filter(
       d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage"
     );
     if (depGarageNow.length === 0) return;
-    const certId = `CHK-${active.id.toString().slice(-8)}`;
     const today = new Date().toLocaleDateString("fr-FR");
     saveCertificat(certId, {
       vehicleName: active.name,
       vehicleImmat: active.immat || "",
       nbInterventions: depGarageNow.length,
       date: today,
+      url: publicUrl,
       travaux: depGarageNow.map(d => ({
         date: d.date,
         desc: d.description || d.categorie,
@@ -25,7 +28,7 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
         km: d.km || "",
       })),
     });
-  }, [active, depenses]);
+  }, [active, depenses, certId, publicUrl]);
 
   const [showRappels, setShowRappels] = useState(false);
 
@@ -42,8 +45,6 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
   const depGarage  = (depenses || []).filter(
     d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage"
   );
-  const certId     = `CHK-${active.id.toString().slice(-8).toUpperCase()}`;
-  const publicUrl  = `https://checkar-4a9ad.web.app/certificat.html?id=${certId}`;
 
   // Docs de rappel — même filtre que AccueilScreen, dédupliqués par type
   const seen = new Map();
