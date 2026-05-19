@@ -1,9 +1,10 @@
 import { doc, setDoc, getDoc, collection, addDoc, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "./firebase";
 
-const COL  = "autocheck";
-const INV  = "invitations";
-const CERT = "certificats";
+const COL    = "autocheck";
+const INV    = "invitations";
+const CERT   = "certificats";
+const PHOTOS = "facture_photos";
 
 // ─── Certificats d'entretien ──────────────────────────────────────
 export const saveCertificat = async (certId, data) => {
@@ -11,6 +12,35 @@ export const saveCertificat = async (certId, data) => {
     await setDoc(doc(db, CERT, certId), data);
   } catch (e) {
     console.error("Erreur sauvegarde certificat:", e);
+  }
+};
+
+// ─── Photos de factures ───────────────────────────────────────────
+export const saveFacturePhoto = async (data) => {
+  try {
+    const docRef = await addDoc(collection(db, PHOTOS), data);
+    return docRef.id;
+  } catch (e) {
+    console.error("Erreur save photo:", e);
+    return null;
+  }
+};
+
+export const loadFacturePhotos = async (userId) => {
+  try {
+    const q = query(collection(db, PHOTOS), where("userId", "==", userId));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    return [];
+  }
+};
+
+export const deleteFacturePhotoById = async (photoId) => {
+  try {
+    await deleteDoc(doc(db, PHOTOS, photoId));
+  } catch (e) {
+    console.error("Erreur delete photo:", e);
   }
 };
 

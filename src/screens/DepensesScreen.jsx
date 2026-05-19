@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { storage, auth } from "../config/firebase";
+import { saveFacturePhoto, loadFacturePhotos, deleteFacturePhotoById } from "../config/firestore";
 import { C, card, btn, input, VehicleChip } from "./shared";
 
 function PremiumHistorique({ active, depenses = [], isPremium = true, isUltra = true, onShowPremium }) {
@@ -139,6 +142,19 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
   const [scanning, setScanning] = useState(false);
   const [scanPhoto, setScanPhoto] = useState(null);
   const [kilometrage, setKilometrage] = useState("");
+  const [selCat, setSelCat] = useState("Garage");
+  const [photos, setPhotos] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [confirmPhotoId, setConfirmPhotoId] = useState(null);
+
+  useEffect(() => {
+    if (!active) return;
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+    loadFacturePhotos(userId).then(all =>
+      setPhotos(all.filter(p => p.vehicleId === active.id))
+    );
+  }, [active]);
 
   const scanFacture = async (photoData) => {
     setScanning(true);
@@ -169,12 +185,48 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
         description: result.description || f.description,
         categorie: result.categorie || f.categorie,
       }));
+      setSousOnglet("general");
       setShowForm(true);
       setScanPhoto(null);
     } catch (e) {
       alert("Impossible de lire la facture. Remplissez manuellement.");
     }
     setScanning(false);
+  };
+
+  const handlePhotoScan = (file) => {
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result;
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        setUploading(true);
+        try {
+          const immat = (active.immat || String(active.id)).replace(/[^a-zA-Z0-9]/g, "_");
+          const date = new Date().toISOString().split("T")[0];
+          const catSafe = selCat.replace(/[^a-zA-Z0-9]/g, "_");
+          const storageRef = ref(storage, `factures/${userId}/${active.id}/${catSafe}_${date}_${immat}_${Date.now()}.jpg`);
+          const blob = await (await fetch(base64)).blob();
+          const snap = await uploadBytes(storageRef, blob);
+          const url = await getDownloadURL(snap.ref);
+          const photoId = await saveFacturePhoto({ userId, vehicleId: active.id, vehicleImmat: active.immat || "", url, storagePath: snap.ref.fullPath, categorie: selCat, date, createdAt: Date.now() });
+          if (photoId) setPhotos(prev => [...prev, { id: photoId, vehicleId: active.id, url, storagePath: snap.ref.fullPath, categorie: selCat, date, createdAt: Date.now() }]);
+        } catch (e) {
+          console.error("Upload facture:", e);
+        } finally {
+          setUploading(false);
+        }
+      }
+      scanFacture(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const deletePhoto = async (photo) => {
+    try { await deleteObject(ref(storage, photo.storagePath)); } catch (_) {}
+    await deleteFacturePhotoById(photo.id);
+    setPhotos(prev => prev.filter(p => p.id !== photo.id));
+    setConfirmPhotoId(null);
   };
 
   if (!active) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}><div style={{ fontSize: 48, marginBottom: 12 }}>💰</div><div style={{ fontWeight: 600 }}>{t.choisirVehicule || "Choisis un véhicule depuis l'accueil"}</div></div>;
@@ -190,6 +242,13 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
   const kmMois     = carbMois.length >= 2 ? carbMois[carbMois.length-1].km - carbMois[0].km : 0;
   const CAT_ICONS  = { [t.catFinancement||"Financement"]: "🏦", [t.catAssurance||"Assurance"]: "🛡️", [t.catControle||"Contrôle technique"]: "🚗", [t.catGarage||"Garage"]: "🔧", [t.catPeage||"Péage"]: "🛣️", [t.catLavage||"Lavage"]: "🚿", [t.catContravention||"Contravention"]: "🚔" };
   const CATEGORIES = [t.catFinancement||"Financement", t.catAssurance||"Assurance", t.catControle||"Contrôle technique", t.catGarage||"Garage", t.catPeage||"Péage", t.catLavage||"Lavage", t.catContravention||"Contravention"];
+  const PHOTO_CATS = [
+    { key: "Garage",    icon: "🔧" },
+    { key: "Carburant", icon: "⛽" },
+    { key: "Péage",     icon: "🛣️" },
+    { key: "Lavage",    icon: "🧽" },
+    { key: "Autre",     icon: "📄" },
+  ];
   const tabStyle   = (on) => ({ flex: 1, padding: "10px 0", borderRadius: 20, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 700, transition: "all 0.2s", background: on ? C.green : C.blue, color: on ? "#000" : "white", boxShadow: on ? `0 2px 12px ${C.green}44` : `0 2px 8px ${C.blue}44` });
 
   const addDepense = () => {
@@ -245,6 +304,7 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
         <button style={tabStyle(sousOnglet === "carburant")} onClick={() => setSousOnglet("carburant")}>{t.carburant || "⛽ Carburant"}</button>
         <button style={tabStyle(sousOnglet === "general")}   onClick={() => setSousOnglet("general")}>{t.general || "📋 Général"}</button>
         <button style={tabStyle(sousOnglet === "stats")}     onClick={() => setSousOnglet("stats")}>📊 Stats</button>
+        <button style={tabStyle(sousOnglet === "photos")}    onClick={() => setSousOnglet("photos")}>📷 Photos</button>
       </div>
 
       {sousOnglet === "stats" && <PremiumHistorique active={active} depenses={depenses} isPremium={isPremium} isUltra={isUltra} onShowPremium={onShowPremium} />}
@@ -267,21 +327,6 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
               )}
             </div>
           ))}
-          {isUltra ? (
-            <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,161,0,0.15)", border: `1px solid ${C.orange}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.orange, fontWeight: 700, fontSize: 14 }}>
-              {scanning ? "⏳ Analyse en cours..." : "📷 Scanner une facture"}
-              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => {
-                const file = e.target.files[0]; if (!file) return;
-                const reader = new FileReader();
-                reader.onload = ev => scanFacture(ev.target.result);
-                reader.readAsDataURL(file);
-              }} />
-            </label>
-          ) : (
-            <button onClick={() => onShowPremium?.()} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: `${C.purple}15`, border: `1px solid ${C.purple}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 10, color: C.purple, fontWeight: 700, fontSize: 14, width: "100%" }}>
-              💎 Scanner une facture <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>(Ultra)</span>
-            </button>
-          )}
           <button style={btn({ background: showForm ? C.surface : C.blue, color: showForm ? C.muted : "white", boxShadow: "none", marginBottom: 12 })} onClick={() => setShowForm(f => !f)}>{showForm ? (t.annuler || "✕ Annuler") : (t.ajouterDepense || "➕ Ajouter une dépense")}</button>
           {showForm && (
             <div style={card({ padding: 20 })}>
@@ -355,6 +400,63 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
               <input type="number" style={input} placeholder="Ex: 45.5" value={form.litres} onChange={e => setForm(f => ({ ...f, litres: e.target.value }))} />
               <button style={btn({ opacity: form.prixCarburant && form.date && form.km ? 1 : 0.5 })} onClick={addDepense}>{t.enregistrerPlein || "✅ Enregistrer le plein"}</button>
             </div>
+          )}
+        </div>
+      )}
+
+      {sousOnglet === "photos" && (
+        <div>
+          <div style={{ fontSize: 11, color: C.muted, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>CATÉGORIE</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+            {PHOTO_CATS.map(cat => (
+              <button key={cat.key} onClick={() => setSelCat(cat.key)} style={{ padding: "7px 12px", borderRadius: 20, border: `1px solid ${selCat === cat.key ? C.blue : "rgba(255,255,255,0.12)"}`, background: selCat === cat.key ? C.blue + "22" : "transparent", color: selCat === cat.key ? C.blue : C.muted, cursor: "pointer", fontSize: 13, fontWeight: 700 }}>
+                {cat.icon} {cat.key}
+              </button>
+            ))}
+          </div>
+
+          {isUltra ? (
+            <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: "rgba(255,161,0,0.15)", border: `1px solid ${C.orange}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 16, color: (uploading || scanning) ? C.muted : C.orange, fontWeight: 700, fontSize: 14 }}>
+              {uploading ? "⏳ Upload..." : scanning ? "⏳ Analyse IA..." : "📷 Scanner une facture"}
+              <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} disabled={uploading || scanning}
+                onChange={e => { const f = e.target.files[0]; if (f) handlePhotoScan(f); e.target.value = ""; }} />
+            </label>
+          ) : (
+            <button onClick={() => onShowPremium?.()} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, background: `${C.purple}15`, border: `1px solid ${C.purple}44`, borderRadius: 14, padding: 14, cursor: "pointer", marginBottom: 16, color: C.purple, fontWeight: 700, fontSize: 14, width: "100%" }}>
+              💎 Scanner une facture <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>(Ultra)</span>
+            </button>
+          )}
+
+          {photos.length === 0 ? (
+            <div style={card({ textAlign: "center", padding: 32, color: C.muted })}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
+              <div>Aucune photo de facture</div>
+              <div style={{ fontSize: 12, marginTop: 6 }}>Sélectionnez une catégorie et scannez votre première facture</div>
+            </div>
+          ) : (
+            PHOTO_CATS.filter(cat => photos.some(p => p.categorie === cat.key)).map(cat => (
+              <div key={cat.key} style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 11, color: C.muted, fontWeight: 800, letterSpacing: 1, marginBottom: 8 }}>{cat.icon} {cat.key.toUpperCase()}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  {photos.filter(p => p.categorie === cat.key).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).map(photo => (
+                    <div key={photo.id} style={{ background: C.surface, borderRadius: 12, overflow: "hidden" }}>
+                      <img src={photo.url} alt={cat.key} style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block" }} />
+                      <div style={{ padding: "6px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ fontSize: 10, color: C.muted }}>{photo.date}</div>
+                        {confirmPhotoId === photo.id ? (
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button onClick={() => setConfirmPhotoId(null)} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: 6, padding: "3px 7px", color: C.muted, cursor: "pointer", fontSize: 10 }}>✕</button>
+                            <button onClick={() => deletePhoto(photo)} style={{ background: C.red + "22", border: `1px solid ${C.red}44`, borderRadius: 6, padding: "3px 7px", color: C.red, cursor: "pointer", fontSize: 10, fontWeight: 700 }}>🗑️</button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmPhotoId(photo.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16, padding: "2px 4px" }}>🗑️</button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
           )}
         </div>
       )}
