@@ -1,34 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { TYPE_LABELS } from "../config/data";
 import { C, card, btn } from "./shared";
-import { saveCertificat } from "../config/firestore";
-
 export function RapportScreen({ active, checklist, prog, docs, exportPDF, localInvoices, depenses, t = {}, isPremium = true, onShowPremium }) {
   const certId    = active ? `CHK-${active.id.toString().slice(-8).toUpperCase()}` : null;
   const publicUrl = certId ? `https://checkar.checkapp-studio.fr/certificat.html?id=${certId}` : null;
-
-  useEffect(() => {
-    if (!active || !certId) return;
-    const depGarageNow = (depenses || []).filter(
-      d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage"
-    );
-    if (depGarageNow.length === 0) return;
-    const today = new Date().toLocaleDateString("fr-FR");
-    saveCertificat(certId, {
-      vehicleName: active.name,
-      vehicleImmat: active.immat || "",
-      nbInterventions: depGarageNow.length,
-      date: today,
-      url: publicUrl,
-      travaux: depGarageNow.map(d => ({
-        date: d.date,
-        desc: d.description || d.categorie,
-        montant: d.montant,
-        km: d.km || "",
-      })),
-    });
-  }, [active, depenses, certId, publicUrl]);
 
   const [showRappels, setShowRappels] = useState(false);
 
@@ -59,10 +35,6 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
     d.type === "revision"  ? (t.revision || d.label) : d.label;
 
   const docColor = d => d.days <= 0 ? C.red : d.days <= 15 ? C.red : d.days <= 30 ? C.yellow : C.green;
-
-  console.log("docs:", docs);
-  console.log("active.id:", active?.id);
-  console.log("reportDocs:", reportDocs);
 
   return (
     <div style={{ padding: 16, background: C.bg, minHeight: "100vh" }}>

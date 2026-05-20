@@ -137,7 +137,7 @@ function PremiumHistorique({ active, depenses = [], isPremium = true, isUltra = 
 export function DepensesScreen({ active, vehicles, setVehicles, setActive, depenses, setDepenses, t = {}, isPremium = true, isUltra = true, onShowPremium }) {
   const [sousOnglet, setSousOnglet] = useState("carburant");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "" });
+  const [form, setForm] = useState({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "", photoUrl: "" });
   const [confirmId, setConfirmId] = useState(null);
   const [scanning, setScanning] = useState(false);
   const [scanPhoto, setScanPhoto] = useState(null);
@@ -210,7 +210,11 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
           const snap = await uploadBytes(storageRef, blob);
           const url = await getDownloadURL(snap.ref);
           const photoId = await saveFacturePhoto({ userId, vehicleId: active.id, vehicleImmat: active.immat || "", url, storagePath: snap.ref.fullPath, categorie: selCat, date, createdAt: Date.now() });
-          if (photoId) setPhotos(prev => [...prev, { id: photoId, vehicleId: active.id, url, storagePath: snap.ref.fullPath, categorie: selCat, date, createdAt: Date.now() }]);
+          if (photoId) {
+            setPhotos(prev => [...prev, { id: photoId, vehicleId: active.id, url, storagePath: snap.ref.fullPath, categorie: selCat, date, createdAt: Date.now() }]);
+            setForm(f => ({ ...f, photoUrl: url }));
+            console.log("[PHOTO] URL set in form:", url);
+          }
         } catch (e) {
           console.error("Upload facture:", e);
         } finally {
@@ -227,6 +231,31 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
     await deleteFacturePhotoById(photo.id);
     setPhotos(prev => prev.filter(p => p.id !== photo.id));
     setConfirmPhotoId(null);
+  };
+
+  const uploadPhotoOnly = (file) => {
+    const userId = auth.currentUser?.uid;
+    if (!userId) return;
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      try {
+        const base64 = ev.target.result;
+        const immat = (active.immat || String(active.id)).replace(/[^a-zA-Z0-9]/g, "_");
+        const date = new Date().toISOString().split("T")[0];
+        const storageRef = ref(storage, `factures/${userId}/${active.id}/Garage_${date}_${immat}_${Date.now()}.jpg`);
+        const blob = await (await fetch(base64)).blob();
+        const snap = await uploadBytes(storageRef, blob);
+        const url = await getDownloadURL(snap.ref);
+        await saveFacturePhoto({ userId, vehicleId: active.id, vehicleImmat: active.immat || "", url, storagePath: snap.ref.fullPath, categorie: "Garage", date, createdAt: Date.now() });
+        setForm(f => ({ ...f, photoUrl: url }));
+      } catch (e) {
+        console.error("Upload photo:", e);
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   if (!active) return <div style={{ padding: 40, textAlign: "center", color: C.muted }}><div style={{ fontSize: 48, marginBottom: 12 }}>💰</div><div style={{ fontWeight: 600 }}>{t.choisirVehicule || "Choisis un véhicule depuis l'accueil"}</div></div>;
@@ -254,7 +283,8 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
   const addDepense = () => {
     if (sousOnglet === "general") {
       if (!form.montant || !form.date) return;
-      setDepenses(p => [...p, { id: Date.now(), type: "general", date: form.date, montant: form.montant, categorie: form.categorie, description: form.description, km: kilometrage, vehicleId: active.id, vehicleName: active.name }]);
+      console.log("[ADD_DEPENSE] form.photoUrl =", form.photoUrl);
+      setDepenses(p => [...p, { id: Date.now(), type: "general", date: form.date, montant: form.montant, categorie: form.categorie, description: form.description, km: kilometrage, vehicleId: active.id, vehicleName: active.name, photoUrl: form.photoUrl || "" }]);
     } else {
       if (!form.prixCarburant || !form.date || !form.km) return;
       setDepenses(p => [...p, { id: Date.now(), type: "carburant", date: form.date, montant: form.prixCarburant, km: form.km, litres: form.litres, vehicleId: active.id, vehicleName: active.name }]);
@@ -267,7 +297,7 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
         }
       }
     }
-    setForm({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "" });
+    setForm({ date: "", montant: "", categorie: "Garage", description: "", km: "", prixCarburant: "", litres: "", photoUrl: "" });
     setKilometrage("");
     setShowForm(false);
   };
@@ -352,6 +382,23 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
                 <div>
                   <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.description || "DESCRIPTION"}</div>
                   <input style={{ ...input, marginBottom: 10 }} placeholder="Ex: Vidange + filtre huile" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+                </div>
+              )}
+              {form.categorie === "Garage" && (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>PHOTO FACTURE (optionnel)</div>
+                  {form.photoUrl ? (
+                    <div style={{ position: "relative", display: "inline-block" }}>
+                      <img src={form.photoUrl} alt="Facture" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, border: `1px solid ${C.border}`, display: "block" }} />
+                      <button onClick={() => setForm(f => ({ ...f, photoUrl: "" }))} style={{ marginTop: 6, background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 12, padding: 0 }}>✕ Supprimer la photo</button>
+                    </div>
+                  ) : (
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", cursor: uploading ? "default" : "pointer", color: uploading ? C.muted : C.text, fontSize: 13, fontWeight: 600 }}>
+                      {uploading ? "⏳ Upload..." : "📷 Ajouter une photo de facture"}
+                      <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} disabled={uploading}
+                        onChange={e => { const f = e.target.files[0]; if (f) uploadPhotoOnly(f); e.target.value = ""; }} />
+                    </label>
+                  )}
                 </div>
               )}
               <button style={btn({ opacity: form.montant && form.date && (form.categorie !== "Garage" || form.description) ? 1 : 0.5 })} onClick={addDepense}>{t.enregistrerDepense || "✅ Enregistrer"}</button>

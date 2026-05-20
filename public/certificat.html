@@ -157,9 +157,48 @@
       line-height: 1.8;
     }
     .footer a { color: #2157FF; text-decoration: none; }
+    .travail-photo {
+      width: 80px; height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.12);
+      margin-top: 8px;
+      display: block;
+      transition: opacity 0.15s;
+    }
+    .travail-photo:hover { opacity: 0.85; }
+    #lightbox {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      cursor: zoom-out;
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img {
+      max-width: 94vw;
+      max-height: 90vh;
+      border-radius: 12px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+    }
+    #lightbox-close {
+      position: absolute; top: 16px; right: 20px;
+      background: rgba(255,255,255,0.12); border: none;
+      color: #fff; font-size: 22px; border-radius: 50%;
+      width: 38px; height: 38px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
   </style>
 </head>
 <body>
+
+<div id="lightbox" onclick="this.classList.remove('open')">
+  <button id="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open')">✕</button>
+  <img id="lightbox-img" src="" alt="Facture" />
+</div>
 
 <div class="header">
   <div class="logo">CHECK<span>AR</span></div>
@@ -198,17 +237,29 @@
     return Number(m).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
   }
 
+  function openLightbox(url) {
+    document.getElementById("lightbox-img").src = url;
+    document.getElementById("lightbox").classList.add("open");
+  }
+  window.openLightbox = openLightbox;
+
   function render(data, certId) {
     const travaux = data.travaux || [];
     const travauxHTML = travaux.length === 0
       ? '<div class="empty">Aucune intervention enregistree</div>'
       : travaux.map(t =>
-          '<div class="travail-row">' +
-            '<div>' +
-              '<div class="travail-date">' + esc(t.date) + '</div>' +
-              '<div class="travail-desc">' + esc(t.desc) + '</div>' +
+          '<div class="travail-row" style="flex-direction:column;align-items:flex-start;gap:4px">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;width:100%">' +
+              '<div>' +
+                '<div class="travail-date">' + esc(t.date) + '</div>' +
+                '<div class="travail-desc">' + esc(t.desc) + '</div>' +
+              '</div>' +
+              '<div class="travail-montant">' + formatMontant(t.montant) + '</div>' +
             '</div>' +
-            '<div class="travail-montant">' + formatMontant(t.montant) + '</div>' +
+            (t.photoUrl
+              ? (console.log("[IMG] photoUrl:", t.photoUrl),
+                 '<img class="travail-photo" src="' + t.photoUrl + '" alt="Facture" onerror="console.error(\'[IMG FAIL]\', this.src)" onclick="openLightbox(\'' + t.photoUrl.replace(/'/g, "\\'") + '\')" />')
+              : '') +
           '</div>'
         ).join("");
 

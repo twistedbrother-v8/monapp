@@ -6,7 +6,7 @@ import { logoutUser } from "./config/firebase";
 import { useAuth } from "./hooks/useAuth";
 import { useFirestore } from "./hooks/useFirestore";
 import { useVehicleManager } from "./hooks/useVehicleManager";
-import { removeSharedVehicle } from "./config/firestore";
+import { removeSharedVehicle, saveCertificat, loadFacturePhotos } from "./config/firestore";
 import { db } from "./config/firebase";
 import { getDoc, doc } from "firebase/firestore";
 import { CHECKLIST_MAP, getChecklist, TYPE_LABELS } from "./config/data";
@@ -224,6 +224,50 @@ export default function App() {
     if (!userId) return;
     save("depenses", depenses);
   }, [depenses, userId, save]);
+
+  useEffect(() => {
+    if (!active || !userId) return;
+    const depGarageNow = depenses.filter(
+      d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage"
+    );
+    if (depGarageNow.length === 0) return;
+
+    const certId    = `CHK-${active.id.toString().slice(-8).toUpperCase()}`;
+    const publicUrl = `https://checkar.checkapp-studio.fr/certificat.html?id=${certId}`;
+    const today     = new Date().toLocaleDateString("fr-FR");
+
+    const buildAndSave = async () => {
+      // Charger toutes les photos garage pour ce véhicule
+      const allPhotos = await loadFacturePhotos(userId);
+      const garagePhotos = allPhotos.filter(
+        p => p.vehicleId === active.id && p.categorie === "Garage"
+      );
+      // Index par date d'upload (photo.date) pour le fallback
+      const photoByDate = {};
+      garagePhotos.forEach(p => { if (p.date) photoByDate[p.date] = p.url; });
+
+      const travaux = depGarageNow.map(d => ({
+        date:     d.date,
+        desc:     d.description || d.categorie,
+        montant:  d.montant,
+        km:       d.km || "",
+        photoUrl: typeof d.photoUrl === "string" && d.photoUrl.startsWith("http") ? d.photoUrl : (typeof photoByDate[d.date] === "string" && photoByDate[d.date].startsWith("http") ? photoByDate[d.date] : ""),
+      }));
+
+      console.log("[CERT] travaux:", JSON.stringify(travaux.map(t => ({ date: t.date, photoUrl: !!t.photoUrl }))));
+      saveCertificat(certId, {
+        vehicleName:      active.name,
+        vehicleImmat:     active.immat || "",
+        vehicleId:        active.id,
+        nbInterventions:  depGarageNow.length,
+        date:             today,
+        url:              publicUrl,
+        travaux,
+      });
+    };
+
+    buildAndSave();
+  }, [active, depenses, userId]);
 
   useEffect(() => {
     if (!userId) return;

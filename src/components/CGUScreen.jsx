@@ -47,40 +47,48 @@ export default function CGUScreen({ onClose, onBack, showPrivacy }) {
         {tab === "cgu" && (
           <div>
             <div style={{ fontSize: 18, fontWeight: 900, color: C.blue, marginBottom: 4 }}>Conditions Générales d'Utilisation</div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>CHECKAR — Dernière mise à jour : 2026</div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>CHECKAR — CheckApp Studio — Dernière mise à jour : mai 2026</div>
 
             {[
               {
                 titre: "1. Présentation",
-                texte: "CHECKAR est une application gratuite de gestion et d'entretien de véhicules. Elle permet à l'utilisateur de suivre l'état de ses véhicules, gérer ses documents, ses dépenses et d'accéder à des informations utiles en cas d'urgence.",
+                texte: "CHECKAR est une application gratuite de gestion et d'entretien de véhicules, éditée par CheckApp Studio (checkapp-studio.fr). Elle permet à l'utilisateur de suivre l'état de ses véhicules, gérer ses documents, ses dépenses et d'accéder à des informations utiles en cas d'urgence.",
               },
               {
-                titre: "2. Accès au service",
+                titre: "2. Éditeur",
+                texte: "L'application CHECKAR est éditée par CheckApp Studio. Site web : checkapp-studio.fr — Contact : contact@checkapp-studio.fr",
+              },
+              {
+                titre: "3. Accès au service",
                 texte: "L'application est accessible gratuitement à toute personne disposant d'un accès internet et d'un compte utilisateur. La création d'un compte nécessite une adresse email valide et un mot de passe. L'utilisateur est seul responsable de la confidentialité de ses identifiants.",
               },
               {
-                titre: "3. Utilisation du service",
-                texte: "L'utilisateur s'engage à utiliser l'application de manière loyale et conforme à sa destination. Il est interdit d'utiliser le service à des fins illicites, frauduleuses ou contraires aux bonnes mœurs. CHECKAR se réserve le droit de suspendre un compte en cas d'utilisation abusive.",
+                titre: "4. Utilisation du service",
+                texte: "L'utilisateur s'engage à utiliser l'application de manière loyale et conforme à sa destination. Il est interdit d'utiliser le service à des fins illicites, frauduleuses ou contraires aux bonnes mœurs. CheckApp Studio se réserve le droit de suspendre un compte en cas d'utilisation abusive.",
               },
               {
-                titre: "4. Responsabilité",
-                texte: "Les informations fournies par l'application (procédures d'urgence, guide constat, état du véhicule) sont données à titre indicatif. CHECKAR ne saurait être tenu responsable des décisions prises par l'utilisateur sur la base de ces informations. En cas d'urgence, contactez toujours les services officiels (15, 17, 18, 112).",
+                titre: "5. Responsabilité",
+                texte: "Les informations fournies par l'application (procédures d'urgence, guide constat, état du véhicule) sont données à titre indicatif. CheckApp Studio ne saurait être tenu responsable des décisions prises par l'utilisateur sur la base de ces informations. En cas d'urgence, contactez toujours les services officiels (15, 17, 18, 112).",
               },
               {
-                titre: "5. Propriété intellectuelle",
-                texte: "L'application CHECKAR, son code, son design et son contenu sont protégés par les droits de propriété intellectuelle. Toute reproduction, modification ou distribution sans autorisation est interdite.",
+                titre: "6. Propriété intellectuelle",
+                texte: "L'application CHECKAR, son code, son design et son contenu sont la propriété exclusive de CheckApp Studio et sont protégés par les droits de propriété intellectuelle. Toute reproduction, modification ou distribution sans autorisation écrite est interdite.",
               },
               {
-                titre: "6. Disponibilité",
-                texte: "CHECKAR s'efforce d'assurer la disponibilité du service 24h/24 et 7j/7. Cependant, des interruptions peuvent survenir pour maintenance ou en cas de force majeure. Aucune indemnisation ne pourra être réclamée pour ces interruptions.",
+                titre: "7. Disponibilité",
+                texte: "CheckApp Studio s'efforce d'assurer la disponibilité du service 24h/24 et 7j/7. Cependant, des interruptions peuvent survenir pour maintenance ou en cas de force majeure. Aucune indemnisation ne pourra être réclamée pour ces interruptions.",
               },
               {
-                titre: "7. Modification des CGU",
-                texte: "CHECKAR se réserve le droit de modifier les présentes CGU à tout moment. L'utilisateur sera informé des modifications significatives. La poursuite de l'utilisation du service vaut acceptation des nouvelles conditions.",
+                titre: "8. Modification des CGU",
+                texte: "CheckApp Studio se réserve le droit de modifier les présentes CGU à tout moment. L'utilisateur sera informé des modifications significatives. La poursuite de l'utilisation du service vaut acceptation des nouvelles conditions.",
               },
               {
-                titre: "8. Droit applicable",
-                texte: "Les présentes CGU sont soumises au droit français. En cas de litige, les tribunaux français seront compétents.",
+                titre: "9. Droit applicable",
+                texte: "Les présentes CGU sont soumises au droit français. En cas de litige, et à défaut de résolution amiable, les tribunaux français seront compétents.",
+              },
+              {
+                titre: "10. Contact",
+                texte: "Pour toute question concernant ces CGU, contactez CheckApp Studio à l'adresse : contact@checkapp-studio.fr",
               },
             ].map(({ titre, texte }) => (
               <div key={titre} style={{ marginBottom: 20 }}>
@@ -95,40 +103,48 @@ export default function CGUScreen({ onClose, onBack, showPrivacy }) {
         {tab === "confidentialite" && (
           <div>
             <div style={{ fontSize: 18, fontWeight: 900, color: C.blue, marginBottom: 4 }}>Politique de Confidentialité</div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>CHECKAR — Conforme au RGPD — 2026</div>
+            <div style={{ fontSize: 11, color: C.muted, marginBottom: 20 }}>CHECKAR — CheckApp Studio — Conforme au RGPD — Mai 2026</div>
 
             {[
               {
-                titre: "1. Données collectées",
-                texte: "CHECKAR collecte uniquement les données nécessaires au fonctionnement du service : adresse email (pour la connexion), données véhicules (nom, immatriculation, type), documents (assurance, contrôle technique, garage), dépenses et historique d'entretien. Aucune donnée bancaire n'est collectée.",
+                titre: "1. Responsable du traitement",
+                texte: "Le responsable du traitement des données est CheckApp Studio, éditeur de l'application CHECKAR. Contact : contact@checkapp-studio.fr — Site : checkapp-studio.fr",
               },
               {
-                titre: "2. Finalité de la collecte",
-                texte: "Vos données sont utilisées exclusivement pour le fonctionnement de l'application : synchronisation multi-appareils, sauvegarde de vos informations véhicules et génération de rapports d'entretien. Vos données ne sont jamais vendues à des tiers.",
+                titre: "2. Données collectées",
+                texte: "CHECKAR collecte uniquement les données nécessaires au fonctionnement du service : adresse email (pour la connexion), données véhicules (nom, immatriculation, type), documents (assurance, contrôle technique, garage), photos de factures, dépenses et historique d'entretien. Aucune donnée bancaire n'est collectée.",
               },
               {
-                titre: "3. Stockage des données",
-                texte: "Vos données sont stockées de manière sécurisée via Firebase (Google Cloud), conforme aux normes européennes de protection des données. Les photos de véhicules sont stockées localement sur votre appareil et ne transitent pas par nos serveurs.",
+                titre: "3. Finalité de la collecte",
+                texte: "Vos données sont utilisées exclusivement pour le fonctionnement de l'application : synchronisation multi-appareils, sauvegarde de vos informations véhicules et génération de rapports d'entretien. Vos données ne sont jamais vendues ni cédées à des tiers.",
               },
               {
-                titre: "4. Localisation",
+                titre: "4. Stockage des données",
+                texte: "Vos données sont stockées de manière sécurisée via Firebase (Google Cloud), conforme aux normes européennes de protection des données (RGPD). Les photos de factures sont stockées sur Firebase Storage et accessibles uniquement par votre compte.",
+              },
+              {
+                titre: "5. Localisation",
                 texte: "L'application accède à votre position géographique uniquement lorsque vous utilisez la fonction 'Services proches'. Cette donnée n'est pas sauvegardée et sert uniquement à ouvrir Google Maps.",
               },
               {
-                titre: "5. Vos droits (RGPD)",
-                texte: "Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez des droits suivants : droit d'accès à vos données, droit de rectification, droit à l'effacement (droit à l'oubli), droit à la portabilité. Pour exercer ces droits, supprimez simplement votre compte depuis l'application.",
+                titre: "6. Vos droits (RGPD)",
+                texte: "Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez des droits suivants : droit d'accès, droit de rectification, droit à l'effacement (droit à l'oubli), droit à la portabilité. Pour exercer ces droits, supprimez votre compte depuis l'application ou écrivez à contact@checkapp-studio.fr.",
               },
               {
-                titre: "6. Cookies",
-                texte: "CHECKAR n'utilise pas de cookies publicitaires ou de tracking. Seuls des cookies techniques nécessaires au fonctionnement de l'authentification sont utilisés.",
+                titre: "7. Cookies",
+                texte: "CHECKAR n'utilise pas de cookies publicitaires ou de tracking. Seuls des cookies techniques nécessaires au fonctionnement de l'authentification Firebase sont utilisés.",
               },
               {
-                titre: "7. Sécurité",
-                texte: "Nous mettons en œuvre toutes les mesures techniques appropriées pour protéger vos données contre tout accès non autorisé, perte ou divulgation.",
+                titre: "8. Sécurité",
+                texte: "CheckApp Studio met en œuvre toutes les mesures techniques appropriées pour protéger vos données contre tout accès non autorisé, perte ou divulgation. Les accès sont sécurisés par authentification Firebase.",
               },
               {
-                titre: "8. Contact",
-                texte: "Pour toute question relative à vos données personnelles ou pour exercer vos droits, contactez-nous via l'application.",
+                titre: "9. Durée de conservation",
+                texte: "Vos données sont conservées tant que votre compte est actif. En cas de suppression du compte, l'ensemble des données associées est définitivement supprimé dans un délai de 30 jours.",
+              },
+              {
+                titre: "10. Contact",
+                texte: "Pour toute question relative à vos données personnelles, contactez CheckApp Studio : contact@checkapp-studio.fr — checkapp-studio.fr",
               },
             ].map(({ titre, texte }) => (
               <div key={titre} style={{ marginBottom: 20 }}>
