@@ -156,6 +156,12 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
     );
   }, [active]);
 
+  useEffect(() => {
+    if (showForm && sousOnglet === "general" && active?.km) {
+      setKilometrage(String(active.km));
+    }
+  }, [showForm, sousOnglet, active?.km]);
+
   const scanFacture = async (photoData) => {
     setScanning(true);
     try {
@@ -384,23 +390,7 @@ export function DepensesScreen({ active, vehicles, setVehicles, setActive, depen
                   <input style={{ ...input, marginBottom: 10 }} placeholder="Ex: Vidange + filtre huile" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
                 </div>
               )}
-              {form.categorie === "Garage" && (
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>PHOTO FACTURE (optionnel)</div>
-                  {form.photoUrl ? (
-                    <div style={{ position: "relative", display: "inline-block" }}>
-                      <img src={form.photoUrl} alt="Facture" style={{ width: 80, height: 80, objectFit: "cover", borderRadius: 8, border: `1px solid ${C.border}`, display: "block" }} />
-                      <button onClick={() => setForm(f => ({ ...f, photoUrl: "" }))} style={{ marginTop: 6, background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 12, padding: 0 }}>✕ Supprimer la photo</button>
-                    </div>
-                  ) : (
-                    <label style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", cursor: uploading ? "default" : "pointer", color: uploading ? C.muted : C.text, fontSize: 13, fontWeight: 600 }}>
-                      {uploading ? "⏳ Upload..." : "📷 Ajouter une photo de facture"}
-                      <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} disabled={uploading}
-                        onChange={e => { const f = e.target.files[0]; if (f) uploadPhotoOnly(f); e.target.value = ""; }} />
-                    </label>
-                  )}
-                </div>
-              )}
+
               <button style={btn({ opacity: form.montant && form.date && (form.categorie !== "Garage" || form.description) ? 1 : 0.5 })} onClick={addDepense}>{t.enregistrerDepense || "✅ Enregistrer"}</button>
             </div>
           )}
