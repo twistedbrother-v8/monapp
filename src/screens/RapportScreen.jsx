@@ -1,12 +1,90 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { TYPE_LABELS } from "../config/data";
 import { C, card, btn } from "./shared";
-export function RapportScreen({ active, checklist, prog, docs, exportPDF, localInvoices, depenses, t = {}, isPremium = true, onShowPremium }) {
+import { saveCertificat, loadFacturePhotos } from "../config/firestore";
+
+async function urlToBase64(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error("fetch failed");
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxPx = 350;
+          const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.45));
+        };
+        img.onerror = () => resolve(e.target.result);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (e) {
+    console.error("[CERT] fetch image failed:", e.message);
+    return null;
+  }
+}
+
+export function RapportScreen({ active, checklist, prog, docs, exportPDF, localInvoices, depenses, t = {}, isPremium = true, onShowPremium, userId }) {
   const certId    = active ? `CHK-${active.id.toString().slice(-8).toUpperCase()}` : null;
   const publicUrl = certId ? `https://checkar.checkapp-studio.fr/certificat.html?id=${certId}` : null;
 
   const [showRappels, setShowRappels] = useState(false);
+
+  useEffect(() => {
+    if (!active || !certId) return;
+    const depGarageNow = (depenses || []).filter(
+      d => d.vehicleId === active.id && d.type === "general" && d.categorie === "Garage"
+    );
+    if (depGarageNow.length === 0) return;
+    const today = new Date().toLocaleDateString("fr-FR");
+
+    const doSave = async () => {
+      const photos = await loadFacturePhotos(userId);
+      console.log("[CERT] userId utilisé:", userId);
+      console.log("[CERT] photos chargées:", photos.length, photos.map(p => ({ id: p.id, url: p.url?.substring(0, 50), categorie: p.categorie, vehicleId: p.vehicleId })));
+
+      const factures_garage_raw = await Promise.all(
+        photos
+          .filter(p => p.vehicleId === active.id && p.categorie === "Garage" && p.url)
+          .map(async (p) => {
+            const thumb = await urlToBase64(p.url);
+            return thumb ? { factureId: String(p.id || Date.now()), image: thumb, date: p.date || "" } : null;
+          })
+      );
+      const factures_garage = factures_garage_raw.filter(Boolean);
+      console.log("[CERT] factures_garage compressées:", factures_garage.length);
+
+      const travaux = depGarageNow.map(d => ({
+        date: d.date,
+        desc: d.description || d.categorie,
+        montant: d.montant,
+        km: d.km || "",
+        photoUrl: typeof d.photoUrl === "string" && d.photoUrl.startsWith("http") ? d.photoUrl : "",
+      }));
+
+      saveCertificat(certId, {
+        vehicleName: active.name,
+        vehicleImmat: active.immat || "",
+        vehicleId: active.id,
+        nbInterventions: depGarageNow.length,
+        date: today,
+        url: publicUrl,
+        travaux,
+        factures_garage,
+      });
+    };
+    doSave();
+  }, [active, depenses, certId, publicUrl]);
 
   if (!active) return (
     <div style={{ padding: 40, textAlign: "center", color: C.muted }}>

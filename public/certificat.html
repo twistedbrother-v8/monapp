@@ -295,6 +295,18 @@
           ? '<div class="card"><div class="section-title">&#128295; INTERVENTIONS GARAGE</div>' + travauxHTML + '</div>'
           : '') +
 
+        (data.factures_garage && data.factures_garage.length > 0
+          ? '<div class="card"><div class="section-title">&#128247; FACTURES GARAGE (' + data.factures_garage.length + ')</div>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' +
+            data.factures_garage.map(f =>
+              '<div style="border-radius:10px;overflow:hidden;cursor:pointer;position:relative" onclick="openLightbox(\'' + f.image.replace(/'/g, "\\'") + '\')">' +
+              '<img src="' + f.image + '" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block" />' +
+              (f.date ? '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.65));padding:16px 8px 6px;font-size:10px;color:white;font-weight:700">' + new Date(f.date).toLocaleDateString("fr-FR") + '</div>' : '') +
+              '</div>'
+            ).join("") +
+            '</div></div>'
+          : '') +
+
         '<div class="stamp">' +
           '<div class="stamp-title">&#10003; CERTIFIE CHECKAR</div>' +
           '<div class="stamp-date">Document genere le ' + esc(data.date) + '</div>' +
