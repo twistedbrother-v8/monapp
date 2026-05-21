@@ -257,6 +257,29 @@ export function RapportScreen({ active, checklist, prog, docs, exportPDF, localI
           <div style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
             Scannez ce QR code pour voir l'historique complet des interventions
           </div>
+          <button
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: "Certificat entretien " + active.name,
+                  text: "Voici le certificat d'entretien de mon véhicule " + (active.immat || active.name),
+                  url: publicUrl,
+                });
+              } else {
+                navigator.clipboard.writeText(publicUrl).then(() => alert("Lien copié !"));
+              }
+            }}
+            style={{
+              marginTop: 14, width: "100%", padding: "13px 0",
+              background: "#22ff0022", border: "2px solid #22ff0066",
+              borderRadius: 14, color: "#22ff00",
+              fontSize: 14, fontWeight: 800,
+              cursor: "pointer", fontFamily: "inherit",
+              letterSpacing: 0.5,
+            }}
+          >
+            📤 Partager le certificat
+          </button>
         </div>
       )}
 
