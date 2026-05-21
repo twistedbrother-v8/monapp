@@ -18,6 +18,7 @@ const steps = [
   { emoji: "📄", title: "Gérez vos documents", desc: "Enregistrez votre assurance et contrôle technique. L'app vous rappelle automatiquement avant les échéances.", color: "#ffb133" },
   { emoji: "💰", title: "Suivez vos dépenses", desc: "Notez vos pleins et dépenses garage. L'app calcule automatiquement votre consommation et coût au km.", color: "#f97316" },
   { emoji: "🆘", title: "Le bouton SOS", desc: "En cas d'accident, accédez en un clic à la procédure d'urgence, guide constat et services proches.", color: "#fc3f35" },
+  { emoji: "🔗", title: "Certificat & QR Code", desc: "Chaque véhicule génère automatiquement un certificat d'entretien avec QR code. Partagez-le en un clic avec votre garagiste ou lors d'une vente — il contient toutes vos interventions et photos de factures.", color: "#22ff00" },
   { emoji: "🚀", title: "C'est parti !", desc: "Commencez par ajouter votre véhicule. En moins de 2 minutes votre carnet est prêt !", color: "#2157FF" },
 ];
 
