@@ -245,8 +245,8 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
                     <span style={{ background: pillColor(d.days) + "25", color: pillColor(d.days), borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 700 }}>{pillLabel(d.days)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                    <span style={{ fontSize: 12, color: pillColor(d.days), fontWeight: 700 }}>{d.days <= 0 ? (t.depasse || "Dépassée !") : `${t.dans || "Dans"} ${d.days} ${t.jours || "jours"}`}</span>
-                    <span style={{ fontSize: 12, color: C.muted }}>{d.date}</span>
+                    <span style={{ fontSize: 12, color: C.green, fontWeight: 700 }}>Prochaine révision</span>
+                    <span style={{ fontSize: 12, color: C.text, fontWeight: 800 }}>{d.km ? Number(d.km).toLocaleString("fr-FR") + " km" : d.date}</span>
                   </div>
                 </div>
                 <button onClick={() => setConfirmDocId(d.id)} style={{ background: "none", border: "none", color: C.muted, cursor: "pointer", fontSize: 16 }}>✕</button>
@@ -275,14 +275,23 @@ export function DocumentsScreen({ vehicles, active, setActive, docTab, setDocTab
           )}
           {showRevForm && (
             <div style={sCard({ padding: 20 })}>
-              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>{t.dateProchaineRevision || "DATE DE LA PROCHAINE RÉVISION"}</div>
-              <input type="date" style={input} value={form.garRevDate} onChange={e => setForm(f => ({ ...f, garRevDate: e.target.value }))} />
-              {form.garRevDate && (() => { const diff = Math.ceil((new Date(form.garRevDate) - new Date()) / 86400000); const col = diff <= 15 ? C.red : diff <= 30 ? C.yellow : C.green; return <div style={{ background: col + "22", borderRadius: 10, padding: "10px 14px", marginBottom: 10, fontSize: 13 }}><span style={{ color: col, fontWeight: 700 }}>{diff > 0 ? `⏰ ${t.dans || "Dans"} ${diff} ${t.jours || "jours"}` : "⚠️ Révision dépassée !"}</span></div>; })()}
-              <button style={sBtn(!!form.garRevDate)} onClick={() => {
-                if (!form.garRevDate) return;
-                const diff = Math.ceil((new Date(form.garRevDate) - new Date()) / 86400000);
-                setDocs(p => { const filtered = p.filter(d => !(d.type === "revision" && (!active || d.vehicleId === active?.id))); return [...filtered, { id: Date.now(), type: "revision", label: "Révision", icon: "🔩", date: new Date(form.garRevDate).toLocaleDateString("fr-FR"), rawDate: form.garRevDate, days: diff, status: diff <= 15 ? "Urgent" : diff <= 30 ? "Bientôt" : "OK", vehicleId: active?.id, vehicleName: active?.name }]; });
-                setForm(f => ({ ...f, garRevDate: "" })); setShowRevForm(false);
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 5, fontWeight: 700 }}>KM DE LA PROCHAINE RÉVISION</div>
+              <input type="number" style={input} placeholder="Ex : 95 000" value={form.garRevKm || ""} onChange={e => setForm(f => ({ ...f, garRevKm: e.target.value }))} />
+              <button style={sBtn(!!form.garRevKm)} onClick={() => {
+                if (!form.garRevKm) return;
+                setDocs(p => {
+                  const filtered = p.filter(d => !(d.type === "revision" && (!active || d.vehicleId === active?.id)));
+                  return [...filtered, {
+                    id: Date.now(), type: "revision", label: "Révision", icon: "🔩",
+                    km: form.garRevKm,
+                    date: form.garRevKm + " km",
+                    days: 9999,
+                    status: "OK",
+                    vehicleId: active?.id, vehicleName: active?.name
+                  }];
+                });
+                setForm(f => ({ ...f, garRevKm: "" }));
+                setShowRevForm(false);
               }}>{t.enregistrerRevision || "✅ Enregistrer la révision"}</button>
             </div>
           )}

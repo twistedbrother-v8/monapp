@@ -219,7 +219,18 @@ export function AccueilScreen({ vehicles, setVehicles, active, setActive, setTab
                     <div style={{ width: 24, height: 24, borderRadius: 8, background: col + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12 }}>{d.icon}</div>
                     <div>
                       <div style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{labelTrad}</div>
-                      <div style={{ fontSize: 10, color: col, fontWeight: 600 }}>{d.days <= 0 ? (t.expire || "Expiré 🔴") : `${t.dans || "Dans"} ${d.days} ${t.jours || "jours"}`}</div>
+                      <div style={{ fontSize: 10, color: col, fontWeight: 600 }}>
+                        {d.type === "revision" && d.km
+                          ? (() => {
+                              const kmActuel = parseInt(active?.km) || 0;
+                              const kmRevision = parseInt(d.km) || 0;
+                              const diff = kmRevision - kmActuel;
+                              if (diff <= 0) return "Révision due !";
+                              return `Dans ${diff.toLocaleString("fr-FR")} km`;
+                            })()
+                          : d.days <= 0 ? (t.expire || "Expiré 🔴") : `${t.dans || "Dans"} ${d.days} ${t.jours || "jours"}`
+                        }
+                      </div>
                     </div>
                   </div>
                   <div style={{ fontSize: 10, color: C.muted }}>{d.date} ›</div>
